@@ -37,11 +37,29 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   private
 
   def build_contact_inbox
+    @resolved_contact_params = contact_params
     @contact_inbox = ::ContactInboxWithContactBuilder.new(
       source_id: @sender_id,
       inbox: @inbox,
-      contact_attributes: contact_params
+      contact_attributes: @resolved_contact_params
     ).perform
+    apply_resolved_name
+    schedule_name_refresh if Facebook::ContactProfileService.placeholder?(@contact_inbox.contact.name)
+  end
+
+  def apply_resolved_name
+    resolved_name = @resolved_contact_params[:name]
+    contact = @contact_inbox.contact
+    return if Facebook::ContactProfileService.placeholder?(resolved_name)
+    return unless Facebook::ContactProfileService.placeholder?(contact.name)
+
+    contact.update!(name: resolved_name)
+  end
+
+  def schedule_name_refresh
+    [15.seconds, 2.minutes].each do |wait|
+      Facebook::RefreshContactNameJob.set(wait: wait).perform_later(@contact_inbox.id)
+    end
   end
 
   def build_message
@@ -133,41 +151,25 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   end
 
   def process_contact_params_result(result)
-    name = result['name'].presence || [result['first_name'], result['last_name']].compact_blank.join(' ').presence || 'John Doe'
+    name = Facebook::ContactProfileService.display_name(result) || Facebook::ContactProfileService::PLACEHOLDER_NAME
 
     {
       name: name,
       account_id: @inbox.account_id,
-      avatar_url: result['profile_pic']
+      avatar_url: result['profile_pic'] || result[:profile_pic]
     }
   end
 
-  # rubocop:disable Metrics/AbcSize
-  # rubocop:disable Metrics/MethodLength
   def contact_params
-    begin
-      k = Koala::Facebook::API.new(@inbox.channel.page_access_token) if @inbox.facebook?
-      result = k.get_object(@sender_id) || {}
-    rescue Koala::Facebook::AuthenticationError => e
-      Rails.logger.warn("Facebook authentication error for inbox: #{@inbox.id} with error: #{e.message}")
-      Rails.logger.error e
-      @inbox.channel.authorization_error!
-      raise
-    rescue Koala::Facebook::ClientError => e
-      result = {}
-      # OAuthException, code: 100, error_subcode: 2018218, message: (#100) No profile available for this user
-      # We don't need to capture this error as we don't care about contact params in case of echo messages
-      if e.message.include?('2018218')
-        Rails.logger.warn e
-      else
-        ChatwootExceptionTracker.new(e, account: @inbox.account).capture_exception unless @outgoing_echo
-      end
-    rescue StandardError => e
-      result = {}
-      ChatwootExceptionTracker.new(e, account: @inbox.account).capture_exception
-    end
-    process_contact_params_result(result)
+    result = Facebook::ContactProfileService.new(channel: @inbox.channel, sender_id: @sender_id).perform
+    process_contact_params_result(result || {})
+  rescue Koala::Facebook::AuthenticationError => e
+    Rails.logger.warn("Facebook authentication error for inbox: #{@inbox.id} with error: #{e.message}")
+    Rails.logger.error e
+    @inbox.channel.authorization_error!
+    raise
+  rescue StandardError => e
+    ChatwootExceptionTracker.new(e, account: @inbox.account).capture_exception unless e.is_a?(Koala::Facebook::ClientError) && @outgoing_echo
+    process_contact_params_result({})
   end
-  # rubocop:enable Metrics/AbcSize
-  # rubocop:enable Metrics/MethodLength
 end

@@ -67,6 +67,7 @@ describe Messages::Facebook::MessageBuilder do
                                                                                             'error_subcode' => 2_018_218,
                                                                                             'code' => 100
                                                                                           }))
+      allow(fb_object).to receive(:get_connections).and_return([])
       message_builder
 
       contact = facebook_channel.inbox.contacts.first
@@ -75,6 +76,51 @@ describe Messages::Facebook::MessageBuilder do
 
       expect(facebook_channel.inbox.reload.contacts.count).to eq(1)
       expect(contact.name).to eq(default_name)
+    end
+
+    it 'uses the conversation participant name when the profile lookup is refused' do
+      allow(Koala::Facebook::API).to receive(:new).and_return(fb_object)
+      allow(fb_object).to receive(:get_object).and_raise(Koala::Facebook::ClientError.new(400, '',
+                                                                                          {
+                                                                                            'type' => 'OAuthException',
+                                                                                            'message' => '(#100) No profile available for this user.',
+                                                                                            'error_subcode' => 2_018_218,
+                                                                                            'code' => 100
+                                                                                          }))
+      allow(fb_object).to receive(:get_connections).and_return(
+        [{
+          'participants' => {
+            'data' => [
+              { 'name' => 'Page', 'id' => facebook_channel.page_id },
+              { 'name' => 'Real Sender', 'id' => '3383290475046708' }
+            ]
+          }
+        }]
+      )
+
+      message_builder
+
+      expect(facebook_channel.inbox.contacts.first.name).to eq('Real Sender')
+    end
+
+    it 'replaces an existing John Doe contact when a later message includes the real name' do
+      allow(Koala::Facebook::API).to receive(:new).and_return(fb_object)
+      allow(fb_object).to receive(:get_object).and_return({})
+      allow(fb_object).to receive(:get_connections).and_return([])
+      message_builder
+      expect(facebook_channel.inbox.contacts.first.name).to eq('John Doe')
+
+      allow(fb_object).to receive(:get_object).and_return({ 'name' => 'Real Sender' })
+      follow_up = Integrations::Facebook::MessageParser.new({
+        messaging: {
+          sender: { id: '3383290475046708' },
+          recipient: { id: facebook_channel.page_id },
+          message: { mid: 'm_follow_up', text: 'again' }
+        }
+      }.to_json)
+      described_class.new(follow_up, facebook_channel.inbox).perform
+
+      expect(facebook_channel.inbox.contacts.first.reload.name).to eq('Real Sender')
     end
 
     it 'marks echo messages as external echo messages' do
