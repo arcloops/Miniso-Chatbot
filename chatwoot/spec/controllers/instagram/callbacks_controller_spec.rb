@@ -23,12 +23,11 @@ RSpec.describe Instagram::CallbacksController do
     allow(exception_tracker).to receive(:capture_exception)
 
     # Stub the exact request format that's being made
-    stub_request(:post, 'https://graph.instagram.com/v22.0/12345/subscribed_apps?access_token=long_lived_test_token&subscribed_fields%5B%5D=messages&subscribed_fields%5B%5D=message_reactions&subscribed_fields%5B%5D=messaging_seen')
+    stub_request(:post, 'https://graph.instagram.com/v22.0/12345/subscribed_apps')
       .with(
-        headers: {
-          'Accept' => '*/*',
-          'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-          'User-Agent' => 'Ruby'
+        query: {
+          'access_token' => 'long_lived_test_token',
+          'subscribed_fields' => 'messages,message_reactions,messaging_seen'
         }
       )
       .to_return(status: 200, body: '', headers: {})

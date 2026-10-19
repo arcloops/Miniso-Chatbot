@@ -23,6 +23,9 @@ class TriggerScheduledItemsJob < ApplicationJob
     # Messenger stops delivering if the page subscription drops. Put it back.
     Facebook::ResubscribePagesJob.perform_later
 
+    # Instagram Login only. This does not change the Messenger page or WhatsApp webhook.
+    Instagram::ResubscribeJob.perform_later
+
     # Job to trigger pending executions
     AutomationRules::TriggerPendingExecutionsJob.perform_later
   end

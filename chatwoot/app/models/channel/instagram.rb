@@ -43,16 +43,22 @@ class Channel::Instagram < ApplicationRecord
   end
 
   def subscribe
-    # ref https://developers.facebook.com/docs/instagram-platform/webhooks#enable-subscriptions
-    HTTParty.post(
+    # Meta expects one comma-separated field list. An array is sent as repeated
+    # keys and the subscription is rejected, so Instagram texts never arrive.
+    response = HTTParty.post(
       "#{base_uri}/#{instagram_id}/subscribed_apps",
       query: {
-        subscribed_fields: %w[messages message_reactions messaging_seen],
+        subscribed_fields: %w[messages message_reactions messaging_seen].join(','),
         access_token: access_token
       }
     )
+    return true if response.success?
+
+    error = response.parsed_response.is_a?(Hash) ? response.parsed_response.dig('error', 'message') : nil
+    Rails.logger.warn("Instagram subscribe failed for #{instagram_id}: #{error.presence || response.code}")
+    true
   rescue StandardError => e
-    Rails.logger.debug { "Rescued: #{e.inspect}" }
+    Rails.logger.warn("Instagram subscribe failed for #{instagram_id}: #{e.message}")
     true
   end
 
