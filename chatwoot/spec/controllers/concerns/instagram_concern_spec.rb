@@ -44,13 +44,12 @@ RSpec.describe InstagramConcern do
       result = dummy_instance.send(:exchange_for_long_lived_token, short_lived_token)
 
       expect(HTTParty).to have_received(:get).with(
-        'https://graph.instagram.com/access_token',
+        'https://graph.instagram.com/v22.0/access_token',
         {
           query: {
             grant_type: 'ig_exchange_token',
             client_secret: client_secret,
-            access_token: short_lived_token,
-            client_id: client_id
+            access_token: short_lived_token
           },
           headers: { 'Accept' => 'application/json' }
         }
@@ -66,6 +65,27 @@ RSpec.describe InstagramConcern do
         expect do
           dummy_instance.send(:exchange_for_long_lived_token, short_lived_token)
         end.to raise_error(RuntimeError, 'Failed to exchange token: Error')
+      end
+    end
+
+    context 'when Instagram rejects every exchange method' do
+      let(:mock_response) do
+        instance_double(
+          HTTParty::Response,
+          body: '{"error":{"message":"Unsupported request - method type: get"}}',
+          success?: false,
+          code: 400
+        )
+      end
+
+      before do
+        allow(HTTParty).to receive(:post).and_return(mock_response)
+      end
+
+      it 'keeps the login token so the inbox can still be created' do
+        result = dummy_instance.send(:exchange_for_long_lived_token, short_lived_token)
+
+        expect(result).to eq({ 'access_token' => short_lived_token, 'expires_in' => 3_600 })
       end
     end
 

@@ -26,40 +26,44 @@ module InstagramConcern
   end
 
   def exchange_for_long_lived_token(short_lived_token)
-    endpoint = 'https://graph.instagram.com/access_token'
     params = {
       grant_type: 'ig_exchange_token',
       client_secret: client_secret,
-      access_token: short_lived_token,
-      client_id: client_id
+      access_token: short_lived_token
     }
+    version = GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')
+    endpoints = [
+      "https://graph.instagram.com/#{version}/access_token",
+      'https://graph.instagram.com/access_token'
+    ].uniq
 
-    make_api_request(endpoint, params, 'Failed to exchange token')
+    endpoints.each do |endpoint|
+      %i[get post].each do |http_method|
+        result = token_exchange_request(endpoint, params, http_method)
+        return result if result
+      end
+    end
+
+    Rails.logger.warn('Instagram refused the long-lived token exchange. Creating the inbox with the login token.')
+    { 'access_token' => short_lived_token, 'expires_in' => 3_600 }
   end
 
   def fetch_instagram_user_details(access_token)
     Instagram::UserDetailsService.new(access_token: access_token).perform
   end
 
-  def make_api_request(endpoint, params, error_prefix)
-    response = HTTParty.get(
-      endpoint,
-      query: params,
-      headers: { 'Accept' => 'application/json' }
-    )
+  def token_exchange_request(endpoint, params, http_method)
+    response = if http_method == :post
+                 HTTParty.post(endpoint, body: params, headers: { 'Accept' => 'application/json' })
+               else
+                 HTTParty.get(endpoint, query: params, headers: { 'Accept' => 'application/json' })
+               end
+    return JSON.parse(response.body) if response.success?
 
-    unless response.success?
-      Rails.logger.error "#{error_prefix}. Status: #{response.code}, Body: #{response.body}"
-      raise "#{error_prefix}: #{response.body}"
-    end
+    Rails.logger.error "Failed to exchange token via #{http_method.to_s.upcase} #{endpoint}. Status: #{response.code}, Body: #{response.body}"
+    return nil if response.body.to_s.include?('Unsupported request - method type')
 
-    begin
-      JSON.parse(response.body)
-    rescue JSON::ParserError => e
-      ChatwootExceptionTracker.new(e).capture_exception
-      Rails.logger.error "Invalid JSON response: #{response.body}"
-      raise e
-    end
+    raise "Failed to exchange token: #{response.body}"
   end
 
   def base_url

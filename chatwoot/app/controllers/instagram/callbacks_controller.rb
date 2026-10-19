@@ -100,7 +100,7 @@ class Instagram::CallbacksController < ApplicationController
   end
 
   def find_or_create_inbox
-    user_details = fetch_instagram_user_details(@long_lived_token_response['access_token'])
+    user_details = instagram_user_details
     channel_instagram = find_channel_by_instagram_id(user_details['user_id'].to_s)
     channel_exists = channel_instagram.present?
 
@@ -115,6 +115,24 @@ class Instagram::CallbacksController < ApplicationController
     channel_instagram.reauthorized!
 
     [channel_instagram.inbox, channel_exists]
+  end
+
+  def instagram_user_details
+    fetch_instagram_user_details(@long_lived_token_response['access_token'])
+  rescue Instagram::UserDetailsService::Error, JSON::ParserError => e
+    Rails.logger.warn("Instagram profile lookup failed: #{e.message}")
+    fallback_user_details
+  end
+
+  def fallback_user_details
+    oauth_params = @response.params.to_h.with_indifferent_access
+    user_id = oauth_params[:user_id].presence
+    raise 'Instagram did not return an account id' if user_id.blank?
+
+    {
+      'user_id' => user_id.to_s,
+      'username' => oauth_params[:username].presence || 'Instagram'
+    }
   end
 
   def find_channel_by_instagram_id(instagram_id)
