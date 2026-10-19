@@ -5,7 +5,7 @@ class Webhooks::InstagramController < ActionController::API
 
   def events
     Rails.logger.info('Instagram webhook received events')
-    if params['object'].casecmp('instagram').zero?
+    if params['object'].to_s.casecmp('instagram').zero?
       entry_params = params.to_unsafe_hash[:entry]
 
       if contains_echo_event?(entry_params)
@@ -17,6 +17,11 @@ class Webhooks::InstagramController < ActionController::API
       end
 
       render json: :ok
+    elsif params['object'].to_s.casecmp('page').zero?
+      # The page subscription for Messenger is pointed at this callback.
+      # Those events are object "page", so rejecting them drops the text and the auto-reply.
+      enqueue_messenger_page_events
+      render json: :ok
     else
       Rails.logger.warn("Message is not received from the instagram webhook event: #{params['object']}")
       head :unprocessable_entity
@@ -24,6 +29,17 @@ class Webhooks::InstagramController < ActionController::API
   end
 
   private
+
+  def enqueue_messenger_page_events
+    Array(params.to_unsafe_hash[:entry]).each do |entry|
+      entry = entry.with_indifferent_access
+      (Array(entry[:messaging]) + Array(entry[:standby])).each do |messaging|
+        next unless messaging[:message] || messaging[:postback]
+
+        ::Webhooks::FacebookEventsJob.perform_later({ 'messaging' => messaging }.to_json)
+      end
+    end
+  end
 
   def contains_echo_event?(entry_params)
     return false unless entry_params.is_a?(Array)

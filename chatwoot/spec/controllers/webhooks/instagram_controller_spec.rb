@@ -80,6 +80,50 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
       expect(Webhooks::InstagramEventsJob).not_to have_received(:perform_later)
     end
 
+    it 'accepts messenger page events sent to this callback' do
+      page_body = {
+        object: 'page',
+        entry: [{
+          id: 'page-1',
+          messaging: [{
+            sender: { id: 'user-1' },
+            recipient: { id: 'page-1' },
+            timestamp: 1_700_000_000_000,
+            message: { mid: 'mid.1', text: 'hello from messenger' }
+          }]
+        }]
+      }.to_json
+
+      allow(Webhooks::FacebookEventsJob).to receive(:perform_later)
+
+      post_instagram_webhook(page_body)
+
+      expect(response).to have_http_status(:success)
+      expect(Webhooks::FacebookEventsJob).to have_received(:perform_later).with(a_string_including('hello from messenger'))
+    end
+
+    it 'accepts messenger texts that arrive in standby' do
+      page_body = {
+        object: 'page',
+        entry: [{
+          id: 'page-1',
+          standby: [{
+            sender: { id: 'user-1' },
+            recipient: { id: 'page-1' },
+            timestamp: 1_700_000_000_000,
+            message: { mid: 'mid.2', text: 'held messenger text' }
+          }]
+        }]
+      }.to_json
+
+      allow(Webhooks::FacebookEventsJob).to receive(:perform_later)
+
+      post_instagram_webhook(page_body)
+
+      expect(response).to have_http_status(:success)
+      expect(Webhooks::FacebookEventsJob).to have_received(:perform_later).with(a_string_including('held messenger text'))
+    end
+
     it 'returns unauthorized when signature is invalid' do
       allow(Webhooks::InstagramEventsJob).to receive(:perform_later)
 
