@@ -26,9 +26,7 @@ class Instagram::Messenger::MessageText < Instagram::BaseMessageText
   end
 
   def handle_authentication_error(error)
-    @inbox.channel.authorization_error!
-    Rails.logger.warn("Authorization error for account #{@inbox.account_id} for inbox #{@inbox.id}")
-    ChatwootExceptionTracker.new(error, account: @inbox.account).capture_exception
+    Rails.logger.warn("Facebook profile lookup failed for inbox #{@inbox.id}: #{error.message}")
   end
 
   def handle_client_error(error)

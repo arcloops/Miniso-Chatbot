@@ -20,6 +20,9 @@ class TriggerScheduledItemsJob < ApplicationJob
     # Job to sync whatsapp templates
     Channels::Whatsapp::TemplatesSyncSchedulerJob.perform_later
 
+    # Messenger stops delivering if the page subscription drops. Put it back.
+    Facebook::ResubscribePagesJob.perform_later
+
     # Job to trigger pending executions
     AutomationRules::TriggerPendingExecutionsJob.perform_later
   end

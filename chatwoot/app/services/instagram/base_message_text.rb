@@ -12,11 +12,6 @@ class Instagram::BaseMessageText < Instagram::WebhooksBaseService
 
     return if @inbox.blank?
 
-    if @inbox.channel.reauthorization_required?
-      Rails.logger.info("Skipping message processing as reauthorization is required for inbox #{@inbox.id}")
-      return
-    end
-
     return unsend_message if message_is_deleted?
 
     ensure_contact(contact_id) if contacts_first_message?(contact_id)
@@ -35,17 +30,17 @@ class Instagram::BaseMessageText < Instagram::WebhooksBaseService
   end
 
   def agent_message_via_echo?
-    @messaging[:message][:is_echo].present?
+    @messaging[:message].present? && @messaging[:message][:is_echo].present?
   end
 
   def message_is_deleted?
-    @messaging[:message][:is_deleted].present?
+    @messaging[:message].present? && @messaging[:message][:is_deleted].present?
   end
 
   # if contact was present before find out contact_inbox to create message
   def contacts_first_message?(ig_scope_id)
     @contact_inbox = @inbox.contact_inboxes.where(source_id: ig_scope_id).last
-    @contact_inbox.blank? && @inbox.channel.instagram_id.present?
+    @contact_inbox.blank?
   end
 
   def unsend_message

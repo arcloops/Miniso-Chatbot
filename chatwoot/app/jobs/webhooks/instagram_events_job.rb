@@ -184,7 +184,7 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
   end
 
   def messages(entry)
-    (entry[:messaging].presence || entry[:standby] || [])
+    Array(entry[:messaging]) + Array(entry[:standby])
   end
 end
 

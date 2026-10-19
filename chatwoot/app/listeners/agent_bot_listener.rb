@@ -88,7 +88,9 @@ class AgentBotListener < BaseListener
     return if message.private?
     return if message.content_attributes.is_a?(Hash) && message.content_attributes['auto_reply_sent']
 
-    Webhooks::AgentReplyJob.perform_later({ 'id' => message.id })
+    Webhooks::AgentReplyJob.perform_now({ 'id' => message.id })
+  rescue StandardError => e
+    Rails.logger.warn("Auto reply failed for message #{message.id}: #{e.message}")
   end
 
   def process_webhook_bot_event(agent_bot, payload)

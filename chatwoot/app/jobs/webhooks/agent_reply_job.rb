@@ -9,8 +9,6 @@ class Webhooks::AgentReplyJob < ApplicationJob
 
     conversation = message.conversation
     agent_bot = agent_bot_for(conversation)
-    return if agent_bot.blank?
-
     content = reply_content(message)
     return if content.blank?
 
@@ -19,9 +17,18 @@ class Webhooks::AgentReplyJob < ApplicationJob
       content: content,
       sender_name: message.sender.try(:name)
     ).perform
-    return if reply.blank?
+    reply = 'Thanks for your message. How can we help you?' if reply.blank?
 
-    Messages::MessageBuilder.new(agent_bot, conversation, { content: reply, message_type: 'outgoing' }).perform
+    if agent_bot.present?
+      Messages::MessageBuilder.new(agent_bot, conversation, { content: reply, message_type: 'outgoing' }).perform
+    else
+      conversation.messages.create!(
+        account_id: conversation.account_id,
+        inbox_id: conversation.inbox_id,
+        message_type: :outgoing,
+        content: reply
+      )
+    end
     mark_replied(message)
   end
 

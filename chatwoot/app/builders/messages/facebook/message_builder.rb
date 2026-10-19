@@ -18,9 +18,6 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   end
 
   def perform
-    # This channel might require reauthorization, may be owner might have changed the fb password
-    return if @inbox.channel.reauthorization_required?
-
     ActiveRecord::Base.transaction do
       build_contact_inbox
       build_message
@@ -173,10 +170,8 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
     result = Facebook::ContactProfileService.new(channel: @inbox.channel, sender_id: @sender_id).perform
     process_contact_params_result(result || {})
   rescue Koala::Facebook::AuthenticationError => e
-    Rails.logger.warn("Facebook authentication error for inbox: #{@inbox.id} with error: #{e.message}")
-    Rails.logger.error e
-    @inbox.channel.authorization_error!
-    raise
+    Rails.logger.warn("Facebook profile lookup failed for inbox #{@inbox.id}: #{e.message}")
+    process_contact_params_result({})
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: @inbox.account).capture_exception unless e.is_a?(Koala::Facebook::ClientError) && @outgoing_echo
     process_contact_params_result({})
