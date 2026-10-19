@@ -20,6 +20,14 @@ describe AgentBotListener do
         expect(AgentBots::WebhookJob).to receive(:perform_later).exactly(0).times
         listener.message_created(event)
       end
+
+      it 'still queues an auto reply for an incoming customer message' do
+        incoming = create(:message, message_type: 'incoming', account: account, inbox: inbox, conversation: conversation)
+        incoming_event = Events::Base.new(event_name, Time.zone.now, message: incoming)
+
+        expect(Webhooks::AgentReplyJob).to receive(:perform_later).with({ 'id' => incoming.id })
+        listener.message_created(incoming_event)
+      end
     end
 
     context 'when agent bot is configured' do

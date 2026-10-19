@@ -121,8 +121,26 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
     channel = Channel::Instagram.find_by(instagram_id: instagram_id)
     # If not found, fallback to the facebook page channel
     channel ||= Channel::FacebookPage.find_by(instagram_id: instagram_id)
+    channel ||= bind_single_instagram_channel(instagram_id)
 
     channel
+  end
+
+  # Instagram login can store a different id than the one Meta sends on the webhook.
+  # With one connected Instagram inbox, attach that webhook to it so the message is not dropped.
+  def bind_single_instagram_channel(instagram_id)
+    channels = Channel::Instagram.limit(2).to_a
+    return unless channels.one?
+
+    channel = channels.first
+    Rails.logger.warn(
+      "Instagram webhook id #{instagram_id} did not match inbox #{channel.instagram_id}. Using the connected inbox."
+    )
+    channel.update!(instagram_id: instagram_id)
+    channel
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+    Rails.logger.warn("Could not attach Instagram webhook id #{instagram_id}: #{e.message}")
+    nil
   end
 
   def event_name(messaging)

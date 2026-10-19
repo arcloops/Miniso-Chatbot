@@ -5,6 +5,7 @@ describe Facebook::SendOnFacebookService do
 
   before do
     allow(Facebook::Messenger::Subscriptions).to receive(:subscribe).and_return(true)
+    allow(HTTParty).to receive(:post).and_return(instance_double(HTTParty::Response, success?: true, body: '{}'))
     allow(bot).to receive(:deliver).and_return({ recipient_id: '1008372609250235', message_id: 'mid.1456970487936:c34767dfe57ee6e339' }.to_json)
     create(:message, message_type: :incoming, inbox: facebook_inbox, account: account, conversation: conversation)
     GlobalConfig.clear_cache

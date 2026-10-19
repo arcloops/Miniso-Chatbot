@@ -42,7 +42,21 @@ class ChatwootFbProvider < Facebook::Messenger::Configuration::Providers::Base
   end
 end
 
+# Meta delivers some Messenger messages in `standby` instead of `messaging`
+# when another app holds the thread. The gem skips those, so the text never
+# reaches the desk and no auto-reply is sent.
+module FacebookMessengerStandbyEvents
+  def trigger(events)
+    super
+    Facebook::StandbyEvents.process(events)
+  end
+end
+
 Rails.application.reloader.to_prepare do
+  unless Facebook::Messenger::Server.ancestors.include?(FacebookMessengerStandbyEvents)
+    Facebook::Messenger::Server.prepend(FacebookMessengerStandbyEvents)
+  end
+
   Facebook::Messenger.configure do |config|
     config.provider = ChatwootFbProvider.new
   end

@@ -8,6 +8,7 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
   end
 
   def perform_reply
+    take_thread_control
     send_message_to_facebook fb_text_message_params if message.content.present?
 
     if message.attachments.present?
@@ -19,6 +20,22 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     # TODO : handle specific errors or else page will get disconnected
     handle_facebook_error(e)
     Messages::StatusUpdateService.new(message, 'failed', e.message).perform
+  end
+
+  # A standby thread cannot be answered until this app takes control.
+  def take_thread_control
+    recipient_id = contact.get_source_id(inbox.id)
+    return if recipient_id.blank?
+
+    version = GlobalConfigService.load('FACEBOOK_API_VERSION', 'v18.0')
+    HTTParty.post(
+      "https://graph.facebook.com/#{version}/me/take_thread_control",
+      query: { access_token: channel.page_access_token },
+      headers: { 'Content-Type' => 'application/json' },
+      body: { recipient: { id: recipient_id } }.to_json
+    )
+  rescue StandardError => e
+    Rails.logger.info("Facebook take_thread_control skipped: #{e.message}")
   end
 
   def send_message_to_facebook(delivery_params)

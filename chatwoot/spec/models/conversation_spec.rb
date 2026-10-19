@@ -763,6 +763,15 @@ RSpec.describe Conversation do
       expect(conversation.assignee).to be_nil
     end
 
+    it 'keeps a new Instagram conversation open so it stays on the desk' do
+      channel = create(:channel_instagram)
+      create(:agent_bot_inbox, inbox: channel.inbox)
+      conversation = create(:conversation, inbox: channel.inbox, account: channel.account)
+
+      expect(conversation.status).to eq('open')
+      expect(conversation.ai_assignee).to be_nil
+    end
+
     it 'keeps a new Messenger conversation open so it stays on the desk' do
       account = create(:account)
       facebook_channel = create(:channel_facebook_page, account: account)

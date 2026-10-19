@@ -57,7 +57,14 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def conversation
-    @conversation ||= set_conversation_based_on_inbox_config
+    @conversation ||= set_conversation_based_on_inbox_config.tap { |found| reveal_on_desk(found) }
+  end
+
+  def reveal_on_desk(found)
+    return if found.assignee_id.present?
+    return unless found.pending?
+
+    found.update!(status: :open, ai_assignee: nil)
   end
 
   def set_conversation_based_on_inbox_config

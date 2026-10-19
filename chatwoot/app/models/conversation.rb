@@ -326,9 +326,9 @@ class Conversation < ApplicationRecord
   end
 
   def set_active_bot_conversation
-    # Messenger stays open. A pending bot-owned thread is hidden from Mine,
+    # Messenger and Instagram stay open. A pending bot-owned thread is hidden from Mine,
     # Unassigned, and All while the desk filter is Open, even though the inbox bot still replies.
-    return if inbox.channel_type == 'Channel::FacebookPage'
+    return if inbox.channel_type.in?(%w[Channel::FacebookPage Channel::Instagram])
 
     # TODO: make this an inbox config instead of assuming bot conversations should start as pending
     self.status = :pending

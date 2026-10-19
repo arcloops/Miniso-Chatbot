@@ -35,6 +35,8 @@ class AgentBotListener < BaseListener
 
   def message_created(event)
     message = extract_message_and_account(event)[0]
+    enqueue_auto_reply(message)
+
     inbox = message.inbox
     return unless message.webhook_sendable?
 
@@ -81,14 +83,18 @@ class AgentBotListener < BaseListener
     process_webhook_bot_event(agent_bot, payload)
   end
 
+  def enqueue_auto_reply(message)
+    return unless message.incoming?
+    return if message.private?
+    return if message.content_attributes.is_a?(Hash) && message.content_attributes['auto_reply_sent']
+
+    Webhooks::AgentReplyJob.perform_later({ 'id' => message.id })
+  end
+
   def process_webhook_bot_event(agent_bot, payload)
     return if agent_bot.outgoing_url.blank?
-
-    if agent_bot.outgoing_url.to_s.include?('/webhooks/agent')
-      incoming = payload[:message_type].to_s == 'incoming' && !payload[:private]
-      Webhooks::AgentReplyJob.perform_later(payload.deep_stringify_keys) if incoming
-      return
-    end
+    # The desk replies directly. Posting this payload back to the agent webhook would reply twice.
+    return if agent_bot.outgoing_url.to_s.include?('/webhooks/agent')
 
     AgentBots::WebhookJob.perform_later(agent_bot.outgoing_url, payload, :agent_bot_webhook,
                                         secret: agent_bot.secret, delivery_id: SecureRandom.uuid)
