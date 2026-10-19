@@ -3,7 +3,15 @@ class Instagram::Messenger::MessageText < Instagram::BaseMessageText
 
   def ensure_contact(ig_scope_id)
     result = fetch_instagram_user(ig_scope_id)
-    find_or_create_contact(result) if result.present?
+    result = unknown_user(ig_scope_id) if result.blank?
+    find_or_create_contact(result)
+  end
+
+  def unknown_user(ig_scope_id)
+    {
+      'name' => "Unknown (IG: #{ig_scope_id})",
+      'id' => ig_scope_id
+    }.with_indifferent_access
   end
 
   def fetch_instagram_user(ig_scope_id)

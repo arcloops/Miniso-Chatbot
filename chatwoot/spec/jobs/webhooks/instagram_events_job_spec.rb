@@ -24,6 +24,34 @@ describe Webhooks::InstagramEventsJob do
   end
 
   describe '#perform' do
+    context 'when the Instagram inbox is gone and only Messenger remains' do
+      let!(:facebook_channel) { create(:channel_facebook_page, account: account, instagram_id: nil) }
+      let(:facebook_inbox) { facebook_channel.inbox }
+      let(:fb_object) { double }
+
+      it 'stores the text on the Messenger inbox' do
+        facebook_inbox.update!(greeting_enabled: false)
+        dm_event = build(:instagram_message_create_event).with_indifferent_access
+        sender_id = dm_event[:entry][0][:messaging][0][:sender][:id]
+
+        allow(Koala::Facebook::API).to receive(:new).and_return(fb_object)
+        allow(fb_object).to receive(:get_object).and_return(
+          {
+            name: 'Jane',
+            id: sender_id,
+            profile_pic: 'https://chatwoot-assets.local/sample.png',
+            username: 'some_user_name'
+          }.with_indifferent_access
+        )
+
+        instagram_webhook.perform_now(dm_event[:entry])
+
+        expect(facebook_inbox.messages.count).to eq(1)
+        expect(facebook_inbox.messages.last.content).to eq('This is the first message from the customer')
+        expect(facebook_channel.reload.instagram_id).to eq('chatwoot-app-user-id-1')
+      end
+    end
+
     context 'when handling messaging events for Instagram via Facebook page' do
       let!(:instagram_messenger_channel) { create(:channel_instagram_fb_page, account: account, instagram_id: 'chatwoot-app-user-id-1') }
       let!(:instagram_messenger_inbox) { create(:inbox, channel: instagram_messenger_channel, account: account, greeting_enabled: false) }

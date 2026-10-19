@@ -37,9 +37,14 @@ class Integrations::Facebook::MessageCreator
   end
 
   def create_contact_message
-    Channel::FacebookPage.where(page_id: response.recipient_id).each do |page|
-      mb = Messages::Facebook::MessageBuilder.new(response, page.inbox)
-      mb.perform
+    pages = Channel::FacebookPage.where(page_id: response.recipient_id).to_a
+    pages = Channel::FacebookPage.limit(2).to_a if pages.empty?
+    return unless pages.one? || pages.any? { |page| page.page_id == response.recipient_id.to_s }
+
+    pages.each do |page|
+      next unless pages.one? || page.page_id == response.recipient_id.to_s
+
+      Messages::Facebook::MessageBuilder.new(response, page.inbox).perform
     end
   end
 end

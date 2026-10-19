@@ -122,8 +122,23 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
     # If not found, fallback to the facebook page channel
     channel ||= Channel::FacebookPage.find_by(instagram_id: instagram_id)
     channel ||= bind_single_instagram_channel(instagram_id)
+    channel ||= bind_messenger_page(instagram_id)
 
     channel
+  end
+
+  # The separate Instagram inbox can be removed while the Messenger page stays.
+  # Keep delivering those texts to that page instead of dropping them.
+  def bind_messenger_page(instagram_id)
+    pages = Channel::FacebookPage.limit(2).to_a
+    return unless pages.one?
+
+    page = pages.first
+    page.update!(instagram_id: instagram_id) if page.instagram_id.blank?
+    page
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+    Rails.logger.warn("Could not attach Instagram webhook id #{instagram_id} to Messenger: #{e.message}")
+    pages.first
   end
 
   # Instagram login can store a different id than the one Meta sends on the webhook.
