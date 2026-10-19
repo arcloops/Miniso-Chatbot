@@ -29,10 +29,14 @@ module MetaTokenVerifyConcern
     signature = request.headers[META_SIGNATURE_HEADER]
     return false unless signature&.start_with?(META_SIGNATURE_PREFIX)
 
+    # Read the raw body before anything touches params. Parsing params first
+    # consumes the request body, the signature no longer matches, and Meta's
+    # delivery is rejected before the message can be saved.
+    body = meta_request_body
     meta_app_secrets.any? do |secret|
       next false if secret.blank?
 
-      expected_signature = "#{META_SIGNATURE_PREFIX}#{OpenSSL::HMAC.hexdigest('SHA256', secret, meta_request_body)}"
+      expected_signature = "#{META_SIGNATURE_PREFIX}#{OpenSSL::HMAC.hexdigest('SHA256', secret, body)}"
       ActiveSupport::SecurityUtils.secure_compare(expected_signature, signature)
     end
   end

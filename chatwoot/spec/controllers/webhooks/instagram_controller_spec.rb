@@ -94,12 +94,12 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
         }]
       }.to_json
 
-      allow(Webhooks::FacebookEventsJob).to receive(:perform_later)
+      allow(Webhooks::FacebookEventsJob).to receive(:perform_now)
 
       post_instagram_webhook(page_body)
 
       expect(response).to have_http_status(:success)
-      expect(Webhooks::FacebookEventsJob).to have_received(:perform_later).with(a_string_including('hello from messenger'))
+      expect(Webhooks::FacebookEventsJob).to have_received(:perform_now).with(a_string_including('hello from messenger'))
     end
 
     it 'accepts messenger texts that arrive in standby' do
@@ -116,12 +116,12 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
         }]
       }.to_json
 
-      allow(Webhooks::FacebookEventsJob).to receive(:perform_later)
+      allow(Webhooks::FacebookEventsJob).to receive(:perform_now)
 
       post_instagram_webhook(page_body)
 
       expect(response).to have_http_status(:success)
-      expect(Webhooks::FacebookEventsJob).to have_received(:perform_later).with(a_string_including('held messenger text'))
+      expect(Webhooks::FacebookEventsJob).to have_received(:perform_now).with(a_string_including('held messenger text'))
     end
 
     it 'returns unauthorized when signature is invalid' do
