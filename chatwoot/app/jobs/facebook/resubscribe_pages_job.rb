@@ -2,7 +2,6 @@ class Facebook::ResubscribePagesJob < ApplicationJob
   queue_as :low
 
   def perform
-    Facebook::RegisterWebhooksService.new.perform
     Channel::FacebookPage.find_each do |page|
       page.subscribe
       page.reauthorized! if page.reauthorization_required?
