@@ -721,6 +721,7 @@ Rails.application.routes.draw do
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
   post 'webhooks/stripe_app', to: 'webhooks/stripe_app#events'
   post 'webhooks/shopify', to: 'webhooks/shopify#events'
+  post 'webhooks/agent', to: 'webhooks/agent#create'
 
   namespace :twitter do
     resource :callback, only: [:show]
