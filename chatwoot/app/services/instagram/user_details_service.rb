@@ -10,25 +10,40 @@ class Instagram::UserDetailsService
 
   pattr_initialize [:access_token!]
 
-  def perform
-    response = HTTParty.get(
-      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/me",
-      query: {
-        fields: 'id,username,user_id,name,profile_picture_url,account_type',
-        access_token: access_token
-      },
-      headers: { 'Accept' => 'application/json' }
-    )
+  FIELD_SETS = [
+    'id,username,user_id,name,profile_picture_url,account_type',
+    'id,username,user_id,name'
+  ].freeze
 
-    unless response.success?
-      Rails.logger.error "Failed to fetch Instagram user details. Status: #{response.code}, Body: #{response.body}"
-      raise Error.new("Failed to fetch Instagram user details: #{response.body}", response.code)
+  def perform
+    response = nil
+    FIELD_SETS.each do |fields|
+      response = request_profile(fields)
+      break if response.success?
+    end
+
+    unless response&.success?
+      Rails.logger.error "Failed to fetch Instagram user details. Status: #{response&.code}, Body: #{response&.body}"
+      raise Error.new("Failed to fetch Instagram user details: #{response&.body}", response&.code)
     end
 
     JSON.parse(response.body)
   rescue JSON::ParserError => e
     ChatwootExceptionTracker.new(e).capture_exception
-    Rails.logger.error "Invalid JSON response: #{response.body}"
+    Rails.logger.error "Invalid JSON response: #{response&.body}"
     raise
+  end
+
+  private
+
+  def request_profile(fields)
+    HTTParty.get(
+      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/me",
+      query: {
+        fields: fields,
+        access_token: access_token
+      },
+      headers: { 'Accept' => 'application/json' }
+    )
   end
 end

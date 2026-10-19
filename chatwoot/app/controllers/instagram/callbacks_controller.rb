@@ -147,6 +147,7 @@ class Instagram::CallbacksController < ApplicationController
       expires_at: expires_at,
       provider_name: user_details['username']
     )
+    channel_instagram.inbox.update!(name: user_details['username']) if user_details['username'].present?
 
     channel_instagram
   end
