@@ -11,20 +11,22 @@ class Instagram::EnsureAppWebhookService
     return if app_id.blank? || app_secret.blank? || callback.blank? || token.blank?
 
     version = config('INSTAGRAM_API_VERSION').presence || 'v22.0'
-    response = HTTParty.post(
-      "https://graph.facebook.com/#{version}/#{app_id}/subscriptions",
-      body: {
-        object: 'instagram',
-        callback_url: callback,
-        verify_token: token,
-        fields: FIELDS.join(','),
-        access_token: "#{app_id}|#{app_secret}"
-      }
-    )
-    return if response.success?
+    [FIELDS.join(','), 'messages'].each do |fields|
+      response = HTTParty.post(
+        "https://graph.facebook.com/#{version}/#{app_id}/subscriptions",
+        body: {
+          object: 'instagram',
+          callback_url: callback,
+          verify_token: token,
+          fields: fields,
+          access_token: "#{app_id}|#{app_secret}"
+        }
+      )
+      return if response.success?
 
-    error = response.parsed_response.is_a?(Hash) ? response.parsed_response.dig('error', 'message') : nil
-    Rails.logger.warn("Instagram webhook registration failed: #{error.presence || response.code}")
+      error = response.parsed_response.is_a?(Hash) ? response.parsed_response.dig('error', 'message') : nil
+      Rails.logger.warn("Instagram webhook registration failed: #{error.presence || response.code}")
+    end
   rescue StandardError => e
     Rails.logger.warn("Instagram webhook registration failed: #{e.message}")
   end

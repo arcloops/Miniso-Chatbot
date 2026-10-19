@@ -43,19 +43,21 @@ class Channel::Instagram < ApplicationRecord
   end
 
   def subscribe
-    # Meta expects one comma-separated field list. An array is sent as repeated
-    # keys and the subscription is rejected, so Instagram texts never arrive.
-    response = HTTParty.post(
-      "#{base_uri}/#{instagram_id}/subscribed_apps",
-      query: {
-        subscribed_fields: %w[messages message_reactions messaging_seen].join(','),
-        access_token: access_token
-      }
-    )
-    return true if response.success?
+    token = access_token
+    subscribed = false
+    ['messages,message_reactions,messaging_seen', 'messages'].each do |fields|
+      ["#{base_uri}/#{instagram_id}/subscribed_apps", "#{base_uri}/me/subscribed_apps"].each do |url|
+        response = HTTParty.post(url, query: { subscribed_fields: fields, access_token: token })
+        if response.success?
+          subscribed = true
+          break
+        end
 
-    error = response.parsed_response.is_a?(Hash) ? response.parsed_response.dig('error', 'message') : nil
-    Rails.logger.warn("Instagram subscribe failed for #{instagram_id}: #{error.presence || response.code}")
+        error = response.parsed_response.is_a?(Hash) ? response.parsed_response.dig('error', 'message') : nil
+        Rails.logger.warn("Instagram subscribe failed for #{instagram_id}: #{error.presence || response.code}")
+      end
+      break if subscribed
+    end
     true
   rescue StandardError => e
     Rails.logger.warn("Instagram subscribe failed for #{instagram_id}: #{e.message}")

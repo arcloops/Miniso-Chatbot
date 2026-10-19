@@ -40,6 +40,11 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
   private
 
   def process_single_entry(entry)
+    if message_change_events?(entry)
+      process_message_changes(entry)
+      return
+    end
+
     if test_event?(entry)
       process_test_event(entry)
       return
@@ -50,17 +55,45 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
 
   def process_messages(entry)
     messages(entry).each do |messaging|
-      Rails.logger.info("Instagram Events Job Messaging: #{messaging}")
-
-      instagram_id = instagram_id(messaging)
-      channel = find_channel(instagram_id)
-
-      next if channel.blank?
-
-      if (event_name = event_name(messaging))
-        send(event_name, messaging, channel)
-      end
+      deliver_messaging(messaging, entry[:id])
     end
+  end
+
+  # Instagram Login delivers real DMs inside changes[field=messages], not messaging.
+  # Treating every changes payload as a test drops the text before a reply can be sent.
+  def message_change_events?(entry)
+    Array(entry[:changes]).any? { |change| message_change?(change) }
+  end
+
+  def process_message_changes(entry)
+    Array(entry[:changes]).each do |change|
+      next unless message_change?(change)
+
+      messaging = change[:value].with_indifferent_access
+      if messaging.dig(:sender, :id).to_s == '12334' && messaging.dig(:recipient, :id).to_s == '23245'
+        Instagram::TestEventService.new(messaging).perform
+        next
+      end
+
+      deliver_messaging(messaging, entry[:id])
+    end
+  end
+
+  def message_change?(change)
+    change.is_a?(Hash) && change[:field].to_s == 'messages' && change[:value].is_a?(Hash)
+  end
+
+  def deliver_messaging(messaging, entry_instagram_id)
+    messaging = messaging.with_indifferent_access
+    Rails.logger.info("Instagram Events Job Messaging: #{messaging}")
+
+    channel = find_channel(instagram_id(messaging))
+    channel = find_channel(entry_instagram_id) if channel.blank? && entry_instagram_id.present?
+    return if channel.blank?
+
+    return unless (event_name = event_name(messaging))
+
+    send(event_name, messaging, channel)
   end
 
   def agent_message_via_echo?(messaging)
@@ -130,6 +163,8 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
   # Instagram login can store a different id than the one Meta sends on the webhook.
   # With one connected Instagram inbox, attach that webhook to it so the message is not dropped.
   def bind_single_instagram_channel(instagram_id)
+    return if instagram_id.blank?
+
     channels = Channel::Instagram.limit(2).to_a
     return unless channels.one?
 
