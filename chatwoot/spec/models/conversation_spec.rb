@@ -763,6 +763,17 @@ RSpec.describe Conversation do
       expect(conversation.assignee).to be_nil
     end
 
+    it 'keeps a new Messenger conversation open so it stays on the desk' do
+      account = create(:account)
+      facebook_channel = create(:channel_facebook_page, account: account)
+      facebook_inbox = create(:inbox, channel: facebook_channel, account: account)
+      create(:agent_bot_inbox, inbox: facebook_inbox)
+      conversation = create(:conversation, inbox: facebook_inbox, account: account)
+
+      expect(conversation.status).to eq('open')
+      expect(conversation.ai_assignee).to be_nil
+    end
+
     it 'preserves explicit human assignee' do
       agent = create(:user, account: bot_inbox.inbox.account)
       conversation = create(:conversation, inbox: bot_inbox.inbox, assignee: agent)

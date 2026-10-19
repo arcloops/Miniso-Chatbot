@@ -36,17 +36,17 @@ RSpec.describe InstagramConcern do
     let(:mock_response) { instance_double(HTTParty::Response, body: response_body, success?: true) }
 
     before do
-      allow(HTTParty).to receive(:post).and_return(mock_response)
+      allow(HTTParty).to receive(:get).and_return(mock_response)
       allow(mock_response).to receive(:inspect).and_return(response_body)
     end
 
     it 'exchanges short lived token for long lived token' do
       result = dummy_instance.send(:exchange_for_long_lived_token, short_lived_token)
 
-      expect(HTTParty).to have_received(:post).with(
+      expect(HTTParty).to have_received(:get).with(
         'https://graph.instagram.com/access_token',
         {
-          body: {
+          query: {
             grant_type: 'ig_exchange_token',
             client_secret: client_secret,
             access_token: short_lived_token,

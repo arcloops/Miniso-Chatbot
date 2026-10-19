@@ -42,10 +42,9 @@ module InstagramConcern
   end
 
   def make_api_request(endpoint, params, error_prefix)
-    # Instagram rejects GET on /access_token with "Unsupported request - method type: get".
-    response = HTTParty.post(
+    response = HTTParty.get(
       endpoint,
-      body: params,
+      query: params,
       headers: { 'Accept' => 'application/json' }
     )
 
