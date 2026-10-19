@@ -88,7 +88,9 @@ class AgentBotListener < BaseListener
     return if message.private?
     return if message.content_attributes.is_a?(Hash) && message.content_attributes['auto_reply_sent']
 
-    Webhooks::AgentReplyJob.perform_now({ 'id' => message.id })
+    # Queue the reply. Running it inside the Messenger webhook request was cut off
+    # before the reply was saved, so the customer text arrived with no answer.
+    Webhooks::AgentReplyJob.perform_later({ 'id' => message.id })
   rescue StandardError => e
     Rails.logger.warn("Auto reply failed for message #{message.id}: #{e.message}")
   end

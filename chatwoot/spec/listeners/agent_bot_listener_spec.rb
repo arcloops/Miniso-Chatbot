@@ -25,7 +25,7 @@ describe AgentBotListener do
         incoming = create(:message, message_type: 'incoming', account: account, inbox: inbox, conversation: conversation)
         incoming_event = Events::Base.new(event_name, Time.zone.now, message: incoming)
 
-        expect(Webhooks::AgentReplyJob).to receive(:perform_now).with({ 'id' => incoming.id })
+        expect(Webhooks::AgentReplyJob).to receive(:perform_later).with({ 'id' => incoming.id })
         listener.message_created(incoming_event)
       end
     end
