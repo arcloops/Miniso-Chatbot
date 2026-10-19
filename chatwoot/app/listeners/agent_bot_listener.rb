@@ -84,6 +84,12 @@ class AgentBotListener < BaseListener
   def process_webhook_bot_event(agent_bot, payload)
     return if agent_bot.outgoing_url.blank?
 
+    if agent_bot.outgoing_url.to_s.include?('/webhooks/agent')
+      incoming = payload[:message_type].to_s == 'incoming' && !payload[:private]
+      Webhooks::AgentReplyJob.perform_later(payload.deep_stringify_keys) if incoming
+      return
+    end
+
     AgentBots::WebhookJob.perform_later(agent_bot.outgoing_url, payload, :agent_bot_webhook,
                                         secret: agent_bot.secret, delivery_id: SecureRandom.uuid)
   end

@@ -34,7 +34,7 @@ class AgentBots::ReplyService
   def request_body
     {
       model: MODEL,
-      max_tokens: 1024,
+      max_tokens: 300,
       system: 'You are the Arcloops inbox assistant. Reply briefly and helpfully to the customer message.',
       messages: [{ role: 'user', content: user_message }]
     }.to_json
