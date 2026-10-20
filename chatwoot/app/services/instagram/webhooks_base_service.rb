@@ -15,15 +15,41 @@ class Instagram::WebhooksBaseService
     @contact_inbox = @inbox.contact_inboxes.where(source_id: user['id']).first
     @contact = @contact_inbox.contact if @contact_inbox
 
-    update_instagram_profile_link(user) && return if @contact
+    if @contact
+      apply_instagram_contact_name(user)
+      update_instagram_profile_link(user)
+      return
+    end
 
     @contact_inbox = @inbox.channel.create_contact_inbox(
-      user['id'], user['name']
+      user['id'], instagram_contact_name(user)
     )
 
     @contact = @contact_inbox.contact
     update_instagram_profile_link(user)
     Avatar::AvatarFromUrlJob.perform_later(@contact, user['profile_pic']) if user['profile_pic']
+  end
+
+  # Instagram's profile "name" is sometimes a generated string such as quiet-smoke-724.
+  # The username is the handle people recognize, so that is what the desk shows.
+  def instagram_contact_name(user)
+    username = user['username'].to_s.strip.presence
+    raw_name = user['name'].to_s.strip.presence
+    return username if raw_name.blank? || (username.present? && generated_instagram_name?(raw_name))
+
+    raw_name || username
+  end
+
+  def apply_instagram_contact_name(user)
+    corrected = instagram_contact_name(user)
+    return if corrected.blank?
+    return unless @contact.name.blank? || generated_instagram_name?(@contact.name)
+
+    @contact.update!(name: corrected)
+  end
+
+  def generated_instagram_name?(name)
+    name.to_s.match?(/\A[a-z]+(?:-[a-z]+){1,3}-\d+\z/)
   end
 
   def update_instagram_profile_link(user)
