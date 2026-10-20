@@ -92,6 +92,18 @@ class Instagram::MessageText < Instagram::BaseMessageText
     return unless @contact_inbox
 
     Messages::Instagram::MessageBuilder.new(@messaging, @inbox, outgoing_echo: agent_message_via_echo?).perform
+    reply_now unless agent_message_via_echo?
+  end
+
+  # The background reply job can be left behind after the customer text is saved.
+  # Reply in this request as well. The job ignores a message that already has an answer.
+  def reply_now
+    message = @inbox.messages.incoming.order(id: :desc).first
+    return if message.blank?
+
+    Webhooks::AgentReplyJob.perform_now({ 'id' => message.id })
+  rescue StandardError => e
+    Rails.logger.warn("Instagram auto reply failed for message #{message&.id}: #{e.message}")
   end
 
   def unknown_user(ig_scope_id)

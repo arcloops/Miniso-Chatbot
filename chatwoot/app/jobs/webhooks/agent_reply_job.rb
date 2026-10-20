@@ -5,31 +5,35 @@ class Webhooks::AgentReplyJob < ApplicationJob
     message = find_message(payload)
     return if message.blank?
     return unless message.incoming? && !message.private?
-    return if replied?(message)
 
-    conversation = message.conversation
-    agent_bot = agent_bot_for(conversation)
-    content = reply_content(message)
-    return if content.blank?
+    # Hold the message until the reply exists so a second job cannot send another one.
+    message.with_lock do
+      return if replied?(message) || already_answered?(message)
 
-    reply = AgentBots::ReplyService.new(
-      conversation: conversation,
-      content: content,
-      sender_name: message.sender.try(:name)
-    ).perform
-    reply = 'Thanks for your message. How can we help you?' if reply.blank?
+      conversation = message.conversation
+      agent_bot = agent_bot_for(conversation)
+      content = reply_content(message)
+      return if content.blank?
 
-    if agent_bot.present?
-      Messages::MessageBuilder.new(agent_bot, conversation, { content: reply, message_type: 'outgoing' }).perform
-    else
-      conversation.messages.create!(
-        account_id: conversation.account_id,
-        inbox_id: conversation.inbox_id,
-        message_type: :outgoing,
-        content: reply
-      )
+      reply = AgentBots::ReplyService.new(
+        conversation: conversation,
+        content: content,
+        sender_name: message.sender.try(:name)
+      ).perform
+      reply = 'Thanks for your message. How can we help you?' if reply.blank?
+
+      if agent_bot.present?
+        Messages::MessageBuilder.new(agent_bot, conversation, { content: reply, message_type: 'outgoing' }).perform
+      else
+        conversation.messages.create!(
+          account_id: conversation.account_id,
+          inbox_id: conversation.inbox_id,
+          message_type: :outgoing,
+          content: reply
+        )
+      end
+      mark_replied(message)
     end
-    mark_replied(message)
   end
 
   private
@@ -75,8 +79,12 @@ class Webhooks::AgentReplyJob < ApplicationJob
     message.content_attributes.is_a?(Hash) && message.content_attributes['auto_reply_sent']
   end
 
+  def already_answered?(message)
+    message.conversation.messages.outgoing.where('id > ?', message.id).exists?
+  end
+
   def mark_replied(message)
     attributes = (message.content_attributes || {}).merge('auto_reply_sent' => true)
-    message.update_column(:content_attributes, attributes)
+    message.update!(content_attributes: attributes)
   end
 end
