@@ -46,16 +46,16 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
     let(:body) { dm_params.merge(object: 'instagram').to_json }
 
     it 'calls the instagram events job with the params for a valid signature' do
-      allow(Webhooks::InstagramEventsJob).to receive(:perform_later)
-      expect(Webhooks::InstagramEventsJob).to receive(:perform_later)
+      allow(Webhooks::InstagramEventsJob).to receive(:perform_now)
+      expect(Webhooks::InstagramEventsJob).to receive(:perform_now)
 
       post_instagram_webhook(body)
       expect(response).to have_http_status(:success)
     end
 
     it 'accepts webhook payloads signed with the Facebook app secret' do
-      allow(Webhooks::InstagramEventsJob).to receive(:perform_later)
-      expect(Webhooks::InstagramEventsJob).to receive(:perform_later)
+      allow(Webhooks::InstagramEventsJob).to receive(:perform_now)
+      expect(Webhooks::InstagramEventsJob).to receive(:perform_now)
 
       facebook_secret = 'test-facebook-secret'
       post_instagram_webhook(

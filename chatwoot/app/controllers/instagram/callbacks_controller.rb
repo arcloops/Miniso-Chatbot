@@ -101,7 +101,8 @@ class Instagram::CallbacksController < ApplicationController
 
   def find_or_create_inbox
     user_details = instagram_user_details
-    channel_instagram = find_channel_by_instagram_id(user_details['user_id'].to_s)
+    channel_instagram = find_channel_by_instagram_id(professional_instagram_id(user_details))
+    channel_instagram ||= sole_instagram_channel
     channel_exists = channel_instagram.present?
 
     if channel_instagram
@@ -136,20 +137,45 @@ class Instagram::CallbacksController < ApplicationController
   end
 
   def find_channel_by_instagram_id(instagram_id)
+    return if instagram_id.blank?
+
     Channel::Instagram.find_by(instagram_id: instagram_id, account: account)
+  end
+
+  def sole_instagram_channel
+    channels = Channel::Instagram.where(account: account).limit(2).to_a
+    channels.first if channels.one?
+  end
+
+  def professional_instagram_id(user_details)
+    (user_details['user_id'].presence || user_details['id']).to_s
   end
 
   def update_channel(channel_instagram, user_details)
     expires_at = Time.current + @long_lived_token_response['expires_in'].seconds
+    previous_name = channel_instagram.provider_name
+    instagram_id = professional_instagram_id(user_details)
 
     channel_instagram.update!(
       access_token: @long_lived_token_response['access_token'],
       expires_at: expires_at,
-      provider_name: user_details['username']
+      provider_name: user_details['username'],
+      instagram_id: instagram_id.presence || channel_instagram.instagram_id
     )
-    channel_instagram.inbox.update!(name: user_details['username']) if user_details['username'].present?
+    rename_generic_inbox(channel_instagram, user_details['username'], previous_name)
+    channel_instagram.subscribe
 
     channel_instagram
+  end
+
+  def rename_generic_inbox(channel_instagram, username, previous_name)
+    return if username.blank? || username == 'Instagram'
+
+    inbox = channel_instagram.inbox
+    return if inbox.blank?
+    return unless [nil, '', 'Instagram', previous_name].include?(inbox.name)
+
+    inbox.update!(name: username)
   end
 
   def create_channel_with_inbox(user_details)
@@ -158,7 +184,7 @@ class Instagram::CallbacksController < ApplicationController
 
       channel_instagram = Channel::Instagram.create!(
         access_token: @long_lived_token_response['access_token'],
-        instagram_id: user_details['user_id'].to_s,
+        instagram_id: professional_instagram_id(user_details),
         account: account,
         expires_at: expires_at,
         provider_name: user_details['username']

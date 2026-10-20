@@ -19,7 +19,9 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   private
 
   def attachments
-    @messaging[:message][:attachments] || {}
+    return {} if message.blank?
+
+    message[:attachments] || {}
   end
 
   def message_type
@@ -85,7 +87,13 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def message_content
-    @messaging[:message][:text]
+    return if message.blank?
+
+    text = message[:text]
+    return text if text.is_a?(String)
+    return text[:body] || text['body'] if text.is_a?(Hash)
+
+    text.to_s.presence
   end
 
   def story_reply_attributes
@@ -97,6 +105,8 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def build_message
+    return if message.blank?
+
     # Duplicate webhook events may be sent for the same message
     # when a user is connected to the Instagram account through both Messenger and Instagram login.
     # There is chance for echo events to be sent for the same message.
@@ -178,7 +188,9 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def message_already_exists?
-    find_message_by_source_id(@messaging[:message][:mid]).present?
+    return false if message.blank?
+
+    find_message_by_source_id(message[:mid]).present?
   end
 
   def find_message_by_source_id(source_id)

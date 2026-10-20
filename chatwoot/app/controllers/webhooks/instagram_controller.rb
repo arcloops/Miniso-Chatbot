@@ -13,7 +13,8 @@ class Webhooks::InstagramController < ActionController::API
         # This avoids duplicate messages when echo comes early during API processing
         ::Webhooks::InstagramEventsJob.set(wait: 2.seconds).perform_later(entries)
       else
-        ::Webhooks::InstagramEventsJob.perform_later(entries)
+        # Save the Instagram text in this request so it does not depend on a second queue pickup.
+        ::Webhooks::InstagramEventsJob.perform_now(entries)
       end
 
       render json: :ok

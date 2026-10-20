@@ -8,14 +8,20 @@ class Instagram::MessageText < Instagram::BaseMessageText
   end
 
   def fetch_instagram_user(ig_scope_id)
+    token = @inbox.channel.access_token
+    return unknown_user(ig_scope_id) if token.blank?
+
     fields = 'name,username,profile_pic,follower_count,is_user_follow_business,is_business_follow_user,is_verified_user'
-    url = "#{base_uri}/#{ig_scope_id}?fields=#{fields}&access_token=#{@inbox.channel.access_token}"
+    url = "#{base_uri}/#{ig_scope_id}?fields=#{fields}&access_token=#{token}"
 
     response = HTTParty.get(url)
 
     return process_successful_response(response) if response.success?
 
-    handle_error_response(response, ig_scope_id) || {}
+    handle_error_response(response, ig_scope_id) || unknown_user(ig_scope_id)
+  rescue StandardError => e
+    Rails.logger.warn("Instagram profile skipped for #{ig_scope_id}: #{e.message}")
+    unknown_user(ig_scope_id)
   end
 
   private
@@ -37,6 +43,8 @@ class Instagram::MessageText < Instagram::BaseMessageText
   def handle_error_response(response, ig_scope_id)
     parsed_response = response.parsed_response
     parsed_response = JSON.parse(parsed_response) if parsed_response.is_a?(String)
+    return unknown_user(ig_scope_id) unless parsed_response.is_a?(Hash)
+
     error_message = parsed_response.dig('error', 'message')
     error_code = parsed_response.dig('error', 'code')
 

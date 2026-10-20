@@ -12,14 +12,18 @@ class Instagram::UserDetailsService
 
   FIELD_SETS = [
     'id,username,user_id,name,profile_picture_url,account_type',
-    'id,username,user_id,name'
+    'id,username,user_id,name',
+    'user_id,username'
   ].freeze
 
   def perform
     response = nil
-    FIELD_SETS.each do |fields|
-      response = request_profile(fields)
-      break if response.success?
+    profile_urls.each do |url|
+      FIELD_SETS.each do |fields|
+        response = request_profile(url, fields)
+        break if response.success?
+      end
+      break if response&.success?
     end
 
     unless response&.success?
@@ -36,9 +40,17 @@ class Instagram::UserDetailsService
 
   private
 
-  def request_profile(fields)
+  def profile_urls
+    version = GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')
+    [
+      "https://graph.instagram.com/#{version}/me",
+      'https://graph.instagram.com/me'
+    ].uniq
+  end
+
+  def request_profile(url, fields)
     HTTParty.get(
-      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/me",
+      url,
       query: {
         fields: fields,
         access_token: access_token

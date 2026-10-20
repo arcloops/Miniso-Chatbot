@@ -162,21 +162,22 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
 
   # Instagram login can store a different id than the one Meta sends on the webhook.
   # With one connected Instagram inbox, attach that webhook to it so the message is not dropped.
+  # Never write this id onto a Messenger page.
   def bind_single_instagram_channel(instagram_id)
-    return if instagram_id.blank?
-
     channels = Channel::Instagram.limit(2).to_a
     return unless channels.one?
 
     channel = channels.first
+    return channel if instagram_id.blank? || channel.instagram_id.to_s == instagram_id.to_s
+
     Rails.logger.warn(
       "Instagram webhook id #{instagram_id} did not match inbox #{channel.instagram_id}. Using the connected inbox."
     )
-    channel.update!(instagram_id: instagram_id)
+    channel.update(instagram_id: instagram_id.to_s)
     channel
-  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
+  rescue StandardError => e
     Rails.logger.warn("Could not attach Instagram webhook id #{instagram_id}: #{e.message}")
-    nil
+    Channel::Instagram.first
   end
 
   def event_name(messaging)
