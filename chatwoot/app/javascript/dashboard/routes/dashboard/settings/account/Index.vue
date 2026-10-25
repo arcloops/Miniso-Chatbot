@@ -16,6 +16,7 @@ import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
+import AccountAPI from 'dashboard/api/account';
 
 export default {
   components: {
@@ -47,6 +48,9 @@ export default {
       website: '',
       botDescription: '',
       features: {},
+      productSheet: null,
+      sheetFile: null,
+      isUploadingSheet: false,
     };
   },
   validations: {
@@ -134,8 +138,48 @@ export default {
         this.website = customAttributes.website || '';
         this.botDescription = customAttributes.bot_description || '';
         this.features = features;
+        this.productSheet = this.getAccount(this.accountId).product_sheet || null;
       } catch (error) {
         // Ignore error
+      }
+    },
+
+    onSheetSelected(event) {
+      const [file] = event.target.files || [];
+      this.sheetFile = file || null;
+    },
+
+    async uploadProductSheet() {
+      if (!this.sheetFile) return;
+      this.isUploadingSheet = true;
+      try {
+        await AccountAPI.uploadProductSheet(this.sheetFile);
+        await this.$store.dispatch('accounts/get');
+        this.sheetFile = null;
+        if (this.$refs.sheetInput) this.$refs.sheetInput.value = '';
+        this.initializeAccount();
+        useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.SUCCESS'));
+      } catch (error) {
+        useAlert(
+          error?.response?.data?.error ||
+            this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.ERROR')
+        );
+      } finally {
+        this.isUploadingSheet = false;
+      }
+    },
+
+    async removeProductSheet() {
+      this.isUploadingSheet = true;
+      try {
+        await AccountAPI.deleteProductSheet();
+        await this.$store.dispatch('accounts/get');
+        this.initializeAccount();
+        useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.REMOVE_SUCCESS'));
+      } catch (error) {
+        useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.ERROR'));
+      } finally {
+        this.isUploadingSheet = false;
       }
     },
 
@@ -286,6 +330,62 @@ export default {
             </NextButton>
           </div>
         </form>
+      </SectionLayout>
+
+      <SectionLayout
+        :title="$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.TITLE')"
+        :description="$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.NOTE')"
+        with-border
+      >
+        <div class="grid gap-3">
+          <p v-if="productSheet" class="mb-0 text-sm text-n-slate-12">
+            {{
+              $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.STATUS', {
+                filename: productSheet.filename,
+                count: productSheet.row_count,
+                date: productSheet.updated_at,
+              })
+            }}
+          </p>
+          <p
+            v-if="productSheet && productSheet.truncated"
+            class="mb-0 text-sm text-n-slate-11"
+          >
+            {{
+              $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.TRUNCATED', {
+                count: productSheet.row_count,
+              })
+            }}
+          </p>
+          <input
+            ref="sheetInput"
+            type="file"
+            accept=".csv,.xlsx,text/csv"
+            class="text-sm"
+            @change="onSheetSelected"
+          />
+          <div class="flex gap-2">
+            <NextButton
+              blue
+              type="button"
+              :is-loading="isUploadingSheet"
+              :disabled="!sheetFile"
+              @click="uploadProductSheet"
+            >
+              {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.BUTTON') }}
+            </NextButton>
+            <NextButton
+              v-if="productSheet"
+              type="button"
+              faded
+              slate
+              :disabled="isUploadingSheet"
+              @click="removeProductSheet"
+            >
+              {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.REMOVE') }}
+            </NextButton>
+          </div>
+        </div>
       </SectionLayout>
 
       <woot-loading-state v-if="uiFlags.isFetchingItem" />

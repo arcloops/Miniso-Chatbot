@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_14_152259) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_25_160000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -26,6 +26,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_152259) do
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id"], name: "index_access_tokens_on_owner_type_and_owner_id"
     t.index ["token"], name: "index_access_tokens_on_token", unique: true
+  end
+
+  create_table "account_product_sheets", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "filename", null: false
+    t.jsonb "headers", default: [], null: false
+    t.jsonb "rows", default: [], null: false
+    t.integer "row_count", default: 0, null: false
+    t.boolean "truncated", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_account_product_sheets_on_account_id", unique: true
   end
 
   create_table "account_saml_settings", force: :cascade do |t|
@@ -1722,6 +1734,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_152259) do
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
   end
 
+  add_foreign_key "account_product_sheets", "accounts", on_delete: :cascade
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "campaign_recipients", "accounts", on_delete: :cascade

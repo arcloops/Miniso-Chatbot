@@ -48,11 +48,13 @@ class AgentBots::ReplyService
 
     parts = []
     parts << "You are the customer assistant for #{account.name}."
-    parts << 'Answer from the company description and the website text below. Use the specific facts there, ' \
-             'including product names, services, prices, locations, and policies.'
+    parts << 'Answer from the company description, the daily product sheet, and the website text. ' \
+             'For stock and prices, use the product sheet. Use the website for what the company does.'
     parts << 'Do not give a generic reply when that text answers the question. If it does not contain the fact, ' \
-             'say you will check and get back to them. Do not invent prices, policies, or services.'
+             'say you will check and get back to them. Do not invent prices, policies, services, or stock.'
     parts << "Company description:\n#{account.bot_description}" if account.bot_description.present?
+    sheet = product_sheet_text
+    parts << sheet if sheet.present?
     summary = website_summary
     parts << "Website text:\n#{summary}" if summary.present?
     parts.join("\n\n")
@@ -66,6 +68,20 @@ class AgentBots::ReplyService
     parts << "Recent conversation:\n#{transcript}" if transcript.present?
     parts << "Customer message: #{@content}"
     parts.join("\n\n")
+  end
+
+  def product_sheet_text
+    query = [@content, *recent_customer_lines].compact.join("\n")
+    Accounts::ProductSheetService.reply_text(account, query)
+  rescue StandardError => e
+    Rails.logger.warn("[AgentBots::ReplyService] product sheet failed: #{e.class}: #{e.message}")
+    nil
+  end
+
+  def recent_customer_lines
+    return [] if @conversation.blank?
+
+    @conversation.messages.incoming.order(id: :desc).limit(4).pluck(:content)
   end
 
   def website_summary

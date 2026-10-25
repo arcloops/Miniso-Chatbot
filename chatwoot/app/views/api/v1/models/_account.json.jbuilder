@@ -27,6 +27,15 @@ if resource.custom_attributes.present?
     end
   end
 end
+product_sheet = AccountProductSheet.where(account_id: resource.id).pick(:filename, :row_count, :updated_at, :truncated)
+if product_sheet.present?
+  json.product_sheet do
+    json.filename product_sheet[0]
+    json.row_count product_sheet[1]
+    json.updated_at product_sheet[2]
+    json.truncated product_sheet[3]
+  end
+end
 json.domain @account.domain
 features = @account.enabled_features
 features.delete(Shopify::FeatureGate::ACCOUNT_FEATURE) unless Shopify::FeatureGate.enabled?(account: @account)

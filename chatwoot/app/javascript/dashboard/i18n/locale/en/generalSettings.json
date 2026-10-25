@@ -87,6 +87,17 @@
         "PLACEHOLDER": "Products, services, prices, and policies Leo should know",
         "HELP": "This is the company information for this account. Leo uses it on WhatsApp, Messenger, and Instagram."
       },
+      "PRODUCT_SHEET": {
+        "TITLE": "Daily product sheet",
+        "NOTE": "Upload today's CSV or Excel file of products, stock, and prices. Replace it each day. Leo checks this sheet and the website when a customer asks.",
+        "BUTTON": "Upload today's sheet",
+        "REMOVE": "Remove sheet",
+        "SUCCESS": "Product sheet updated. Leo will use it on the next customer message.",
+        "REMOVE_SUCCESS": "Product sheet removed.",
+        "ERROR": "Could not update the product sheet.",
+        "TRUNCATED": "Only the first {count} products were saved.",
+        "STATUS": "{filename} · {count} products · updated {date}"
+      },
       "LANGUAGE": {
         "LABEL": "Site language",
         "PLACEHOLDER": "Your account name",

@@ -22,6 +22,16 @@ class AccountAPI extends ApiClient {
     );
     return response.data.cache_keys;
   }
+
+  uploadProductSheet(file) {
+    const form = new FormData();
+    form.append('file', file);
+    return axios.post(`${this.url}product_sheet`, form);
+  }
+
+  deleteProductSheet() {
+    return axios.delete(`${this.url}product_sheet`);
+  }
 }
 
 export default new AccountAPI();

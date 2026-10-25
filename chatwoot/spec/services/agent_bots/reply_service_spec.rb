@@ -30,12 +30,21 @@ RSpec.describe AgentBots::ReplyService do
       response
     end
 
+    account.create_product_sheet!(
+      filename: 'stock.csv',
+      headers: ['Product', 'Price', 'Stock'],
+      rows: [['Map', '10 dollars', '4']],
+      row_count: 1
+    )
+
     result = described_class.new(conversation: conversation, content: 'How much is a map?', sender_name: 'Ada').perform
 
     expect(result).to eq('Maps start at ten dollars.')
     expect(captured['system']).to include('Northwind')
     expect(captured['system']).to include('Sells maps')
     expect(captured['system']).to include('Maps start at ten dollars.')
+    expect(captured['system']).to include('Product sheet stock.csv')
+    expect(captured['system']).to include('10 dollars')
     expect(captured['system']).to include('say you will check')
     expect(captured.dig('messages', 0, 'content')).to include('Customer: How much is a map?')
   end
