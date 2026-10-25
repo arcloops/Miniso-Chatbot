@@ -43,9 +43,9 @@ class AgentBots::ReplyService
   end
 
   def system_prompt
-    if company.present?
-      "You are the assistant for #{company.name}. Reply briefly using only the company description, " \
-        'website summary, and conversation. If that material does not cover the question, say you will check ' \
+    if account.present?
+      "You are the assistant for #{account.name}. Reply briefly. Use the company description and website " \
+        'summary when they answer the question. If that material does not cover the question, say you will check ' \
         'and get back to them. Do not invent prices, policies, or services.'
     else
       'You are the Arcloops inbox assistant. Reply briefly and helpfully to the customer message.'
@@ -55,10 +55,10 @@ class AgentBots::ReplyService
   def user_message
     parts = []
     parts << "Customer name: #{@sender_name}" if @sender_name.present?
-    if company.present?
-      parts << "Company: #{company.name}"
-      parts << "Company description: #{company.description}" if company.description.present?
-      summary = company.additional_attributes['website_summary'].to_s.truncate(WEBSITE_SUMMARY_LIMIT)
+    if account.present?
+      parts << "Company: #{account.name}"
+      parts << "Company description: #{account.bot_description}" if account.bot_description.present?
+      summary = account.internal_attributes.to_h['bot_website_summary'].to_s.truncate(WEBSITE_SUMMARY_LIMIT)
       parts << "Website summary:\n#{summary}" if summary.present?
     end
     transcript = recent_transcript
@@ -67,10 +67,10 @@ class AgentBots::ReplyService
     parts.join("\n\n")
   end
 
-  def company
+  def account
     return if @conversation.blank?
 
-    @company ||= @conversation.contact&.company
+    @account ||= @conversation.account
   end
 
   def recent_transcript

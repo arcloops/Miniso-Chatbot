@@ -1,17 +1,15 @@
 require 'rails_helper'
 
 RSpec.describe AgentBots::ReplyService do
-  let(:account) { create(:account) }
-  let(:company) do
+  let(:account) do
     create(
-      :company,
-      account: account,
+      :account,
       name: 'Northwind',
-      description: 'Sells maps',
-      additional_attributes: { 'website_summary' => 'Open weekdays. Maps start at ten dollars.' }
+      custom_attributes: { 'bot_description' => 'Sells maps' },
+      internal_attributes: { 'bot_website_summary' => 'Open weekdays. Maps start at ten dollars.' }
     )
   end
-  let(:contact) { create(:contact, account: account, company: company) }
+  let(:contact) { create(:contact, account: account) }
   let(:conversation) { create(:conversation, account: account, contact: contact) }
 
   before do
@@ -20,7 +18,7 @@ RSpec.describe AgentBots::ReplyService do
     create(:message, conversation: conversation, message_type: :incoming, content: 'How much is a map?')
   end
 
-  it 'sends the company description, website summary, and recent messages' do
+  it 'sends the account company description, website summary, and recent messages' do
     captured = nil
     response = Net::HTTPOK.new('1.1', '200', 'OK')
     allow(response).to receive(:body).and_return({ content: [{ 'type' => 'text', 'text' => 'Maps start at ten dollars.' }] }.to_json)
@@ -40,8 +38,8 @@ RSpec.describe AgentBots::ReplyService do
     expect(user_text).to include('Customer: How much is a map?')
   end
 
-  it 'keeps the general assistant prompt when the contact has no company' do
-    conversation.contact.update!(company: nil)
+  it 'uses the account name when that account has no website summary' do
+    account.update_columns(custom_attributes: {}, internal_attributes: {})
     captured = nil
     response = Net::HTTPOK.new('1.1', '200', 'OK')
     allow(response).to receive(:body).and_return({ content: [{ 'type' => 'text', 'text' => 'Hello' }] }.to_json)
@@ -52,7 +50,7 @@ RSpec.describe AgentBots::ReplyService do
 
     described_class.new(conversation: conversation.reload, content: 'Hello', sender_name: 'Ada').perform
 
-    expect(captured['system']).to eq('You are the Arcloops inbox assistant. Reply briefly and helpfully to the customer message.')
+    expect(captured['system']).to include('Northwind')
     expect(captured.dig('messages', 0, 'content')).not_to include('Website summary')
   end
 end

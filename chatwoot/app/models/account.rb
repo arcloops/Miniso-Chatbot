@@ -38,6 +38,8 @@ class Account < ApplicationRecord
     check_for_column: false
   }.freeze
   SUSPENSION_CATEGORIES = %w[spam non_payment other].freeze
+  BOT_WEBSITE_FORMAT = /\A[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+\z/
+  BOT_DESCRIPTION_LIMIT = 2_000
 
   attr_accessor :suspension_category, :suspension_reason
 
@@ -115,10 +117,13 @@ class Account < ApplicationRecord
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
 
   before_validation :validate_limit_keys
+  before_validation :normalize_bot_website_attribute
+  validate :bot_website_format
   after_create_commit :notify_creation
   after_update_commit :clear_unread_conversation_counts_cache, if: :saved_change_to_feature_conversation_unread_counts?
   after_update :resume_delayed_automations, if: -> { saved_change_to_feature_delayed_automations? && feature_delayed_automations? }
   after_destroy :remove_account_sequences
+  after_update_commit :enqueue_bot_website_summary
 
   def agents
     users.where(account_users: { role: :agent })
@@ -147,6 +152,23 @@ class Account < ApplicationRecord
 
   def suspension_history
     internal_attributes['suspensions'] || []
+  end
+
+  def self.normalize_bot_website(value)
+    raw = value.to_s.strip
+    return '' if raw.blank?
+
+    raw = raw.sub(%r{\Ahttps?://}i, '')
+    raw = raw.split(%r{[/?#]}).first.to_s
+    raw.downcase.delete_prefix('www.')
+  end
+
+  def bot_website
+    self.class.normalize_bot_website(custom_attributes&.[]('website'))
+  end
+
+  def bot_description
+    custom_attributes&.[]('bot_description').to_s.strip.truncate(BOT_DESCRIPTION_LIMIT).presence
   end
 
   def inbound_email_domain
@@ -224,6 +246,35 @@ class Account < ApplicationRecord
     return if reporting_timezone.blank? || ActiveSupport::TimeZone[reporting_timezone].present?
 
     errors.add(:reporting_timezone, I18n.t('errors.account.reporting_timezone.invalid'))
+  end
+
+  def normalize_bot_website_attribute
+    return unless custom_attributes.is_a?(Hash)
+
+    self.custom_attributes = custom_attributes.stringify_keys
+    return unless custom_attributes.key?('website') || custom_attributes.key?('bot_description')
+
+    custom_attributes['website'] = self.class.normalize_bot_website(custom_attributes['website']) if custom_attributes.key?('website')
+    return unless custom_attributes.key?('bot_description')
+
+    custom_attributes['bot_description'] = custom_attributes['bot_description'].to_s.strip.truncate(BOT_DESCRIPTION_LIMIT)
+  end
+
+  def bot_website_format
+    website = custom_attributes.is_a?(Hash) ? custom_attributes['website'].to_s : ''
+    return if website.blank?
+    return if website.match?(BOT_WEBSITE_FORMAT)
+
+    errors.add(:base, 'Website must look like arcloops.ai')
+  end
+
+  def enqueue_bot_website_summary
+    return unless saved_change_to_custom_attributes?
+
+    previous = custom_attributes_before_last_save || {}
+    return if previous['website'].to_s == custom_attributes['website'].to_s
+
+    Accounts::FetchWebsiteSummaryJob.perform_later(id)
   end
 
   def validate_support_email_format

@@ -77,6 +77,16 @@
         "PLACEHOLDER": "Your account name",
         "ERROR": "Please enter a valid account name"
       },
+      "WEBSITE": {
+        "LABEL": "Company website",
+        "PLACEHOLDER": "arcloops.ai",
+        "HELP": "Leo reads this site and uses it for every reply in this account. Use the domain only, for example arcloops.ai."
+      },
+      "BOT_DESCRIPTION": {
+        "LABEL": "What this company offers",
+        "PLACEHOLDER": "Products, services, prices, and policies Leo should know",
+        "HELP": "This is the company information for this account. Leo uses it on WhatsApp, Messenger, and Instagram."
+      },
       "LANGUAGE": {
         "LABEL": "Site language",
         "PLACEHOLDER": "Your account name",

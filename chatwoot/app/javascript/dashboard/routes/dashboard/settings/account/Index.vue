@@ -44,6 +44,8 @@ export default {
       locale: 'en',
       domain: '',
       supportEmail: '',
+      website: '',
+      botDescription: '',
       features: {},
     };
   },
@@ -110,8 +112,15 @@ export default {
   methods: {
     async initializeAccount() {
       try {
-        const { name, locale, id, domain, support_email, features } =
-          this.getAccount(this.accountId);
+        const {
+          name,
+          locale,
+          id,
+          domain,
+          support_email,
+          features,
+          custom_attributes: customAttributes = {},
+        } = this.getAccount(this.accountId);
 
         const effectiveLocale = this.uiSettings?.locale || locale;
         if (effectiveLocale) {
@@ -122,6 +131,8 @@ export default {
         this.id = id;
         this.domain = domain;
         this.supportEmail = support_email;
+        this.website = customAttributes.website || '';
+        this.botDescription = customAttributes.bot_description || '';
         this.features = features;
       } catch (error) {
         // Ignore error
@@ -140,6 +151,8 @@ export default {
           name: this.name,
           domain: this.domain,
           support_email: this.supportEmail,
+          website: this.website,
+          bot_description: this.botDescription,
         });
         // If user locale is set, update the locale with user locale
         const updatedLocale = this.uiSettings?.locale || this.locale;
@@ -199,6 +212,36 @@ export default {
                 {{ lang.name }}
               </option>
             </select>
+          </WithLabel>
+          <WithLabel
+            name="company-website"
+            :label="$t('GENERAL_SETTINGS.FORM.WEBSITE.LABEL')"
+          >
+            <NextInput
+              v-model="website"
+              type="text"
+              class="w-full"
+              :placeholder="$t('GENERAL_SETTINGS.FORM.WEBSITE.PLACEHOLDER')"
+            />
+            <template #help>
+              {{ $t('GENERAL_SETTINGS.FORM.WEBSITE.HELP') }}
+            </template>
+          </WithLabel>
+          <WithLabel
+            name="company-description"
+            :label="$t('GENERAL_SETTINGS.FORM.BOT_DESCRIPTION.LABEL')"
+          >
+            <textarea
+              v-model="botDescription"
+              rows="5"
+              class="w-full"
+              :placeholder="
+                $t('GENERAL_SETTINGS.FORM.BOT_DESCRIPTION.PLACEHOLDER')
+              "
+            />
+            <template #help>
+              {{ $t('GENERAL_SETTINGS.FORM.BOT_DESCRIPTION.HELP') }}
+            </template>
           </WithLabel>
           <WithLabel
             v-if="featureCustomReplyDomainEnabled"

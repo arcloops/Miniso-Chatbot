@@ -54,6 +54,7 @@ class Api::V1::AccountsController < Api::BaseController
 
   def update
     @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email))
+    @account.custom_attributes = {} unless @account.custom_attributes.is_a?(Hash)
     @account.custom_attributes.merge!(custom_attributes_params)
     @account.settings.merge!(settings_params)
     @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
@@ -139,7 +140,7 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def custom_attributes_params
-    params.permit(:industry, :company_size, :timezone, :referral_source, :user_role, :website)
+    params.permit(:industry, :company_size, :timezone, :referral_source, :user_role, :website, :bot_description)
   end
 
   def settings_params

@@ -10,6 +10,7 @@ if resource.custom_attributes.present?
     json.subscription_cancels_on resource.custom_attributes['subscription_cancels_on']
     json.billing_currency resource.billing_currency if resource.respond_to?(:billing_currency) && Enterprise::Billing::Currencies.enabled?
     json.website resource.custom_attributes['website'] if resource.custom_attributes['website'].present?
+    json.bot_description resource.custom_attributes['bot_description'] if resource.custom_attributes['bot_description'].present?
     json.industry resource.custom_attributes['industry'] if resource.custom_attributes['industry'].present?
     json.company_size resource.custom_attributes['company_size'] if resource.custom_attributes['company_size'].present?
     json.timezone resource.custom_attributes['timezone'] if resource.custom_attributes['timezone'].present?
