@@ -40,6 +40,7 @@ class Company < ApplicationRecord
   before_validation :prepare_jsonb_attributes
   after_create_commit :fetch_favicon, if: -> { domain.present? }
   after_update_commit :enqueue_contact_company_name_sync, if: :saved_change_to_name?
+  after_commit :enqueue_website_summary, on: [:create, :update]
 
   scope :ordered_by_name, -> { order(:name) }
   scope :search_by_name_or_domain, lambda { |query|
@@ -80,6 +81,27 @@ class Company < ApplicationRecord
 
   def enqueue_contact_company_name_sync
     Companies::SyncContactNamesJob.perform_later(company_id: id)
+  end
+
+  def enqueue_website_summary
+    if domain.blank?
+      clear_website_summary
+      return
+    end
+
+    return unless saved_change_to_domain? || additional_attributes['website_summary_domain'] != domain
+
+    Companies::FetchWebsiteSummaryJob.perform_later(id)
+  end
+
+  def clear_website_summary
+    return if additional_attributes.blank?
+    return if additional_attributes['website_summary'].blank? && additional_attributes['website_summary_domain'].blank?
+
+    update_columns(
+      additional_attributes: additional_attributes.except('website_summary', 'website_summary_domain'),
+      updated_at: Time.current
+    )
   end
 end
 Company.include_mod_with('Concerns::Company')

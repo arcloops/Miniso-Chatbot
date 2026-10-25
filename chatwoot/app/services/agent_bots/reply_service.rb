@@ -1,6 +1,8 @@
 class AgentBots::ReplyService
   API_URL = 'https://api.anthropic.com/v1/messages'
   MODEL = 'claude-haiku-4-5'
+  HISTORY_LIMIT = 6
+  WEBSITE_SUMMARY_LIMIT = 4_000
 
   def initialize(conversation:, content:, sender_name: nil)
     @conversation = conversation
@@ -35,14 +37,62 @@ class AgentBots::ReplyService
     {
       model: MODEL,
       max_tokens: 300,
-      system: 'You are the Arcloops inbox assistant. Reply briefly and helpfully to the customer message.',
+      system: system_prompt,
       messages: [{ role: 'user', content: user_message }]
     }.to_json
   end
 
+  def system_prompt
+    if company.present?
+      "You are the assistant for #{company.name}. Reply briefly using only the company description, " \
+        'website summary, and conversation. If that material does not cover the question, say you will check ' \
+        'and get back to them. Do not invent prices, policies, or services.'
+    else
+      'You are the Arcloops inbox assistant. Reply briefly and helpfully to the customer message.'
+    end
+  end
+
   def user_message
-    name = @sender_name.present? ? "Customer name: #{@sender_name}\n" : ''
-    "#{name}Customer message: #{@content}"
+    parts = []
+    parts << "Customer name: #{@sender_name}" if @sender_name.present?
+    if company.present?
+      parts << "Company: #{company.name}"
+      parts << "Company description: #{company.description}" if company.description.present?
+      summary = company.additional_attributes['website_summary'].to_s.truncate(WEBSITE_SUMMARY_LIMIT)
+      parts << "Website summary:\n#{summary}" if summary.present?
+    end
+    transcript = recent_transcript
+    parts << "Recent conversation:\n#{transcript}" if transcript.present?
+    parts << "Customer message: #{@content}"
+    parts.join("\n\n")
+  end
+
+  def company
+    return if @conversation.blank?
+
+    @company ||= @conversation.contact&.company
+  end
+
+  def recent_transcript
+    return if @conversation.blank?
+
+    @conversation.messages
+                 .where(private: false)
+                 .where.not(message_type: :activity)
+                 .order(id: :desc)
+                 .limit(HISTORY_LIMIT)
+                 .reverse
+                 .filter_map { |message| transcript_line(message) }
+                 .join("\n")
+                 .presence
+  end
+
+  def transcript_line(message)
+    text = message.content.to_s.strip
+    return if text.blank?
+
+    speaker = message.incoming? ? 'Customer' : 'Assistant'
+    "#{speaker}: #{text.truncate(400)}"
   end
 
   def text_from(body)
