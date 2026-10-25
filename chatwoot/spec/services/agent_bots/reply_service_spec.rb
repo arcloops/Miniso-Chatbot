@@ -6,7 +6,10 @@ RSpec.describe AgentBots::ReplyService do
       :account,
       name: 'Northwind',
       custom_attributes: { 'bot_description' => 'Sells maps' },
-      internal_attributes: { 'bot_website_summary' => 'Open weekdays. Maps start at ten dollars.' }
+      internal_attributes: {
+        'bot_website_summary' => 'Open weekdays. Maps start at ten dollars.',
+        'bot_website_summary_domain' => 'northwind.test'
+      }
     )
   end
   let(:contact) { create(:contact, account: account) }
@@ -31,11 +34,10 @@ RSpec.describe AgentBots::ReplyService do
 
     expect(result).to eq('Maps start at ten dollars.')
     expect(captured['system']).to include('Northwind')
+    expect(captured['system']).to include('Sells maps')
+    expect(captured['system']).to include('Maps start at ten dollars.')
     expect(captured['system']).to include('say you will check')
-    user_text = captured.dig('messages', 0, 'content')
-    expect(user_text).to include('Sells maps')
-    expect(user_text).to include('Maps start at ten dollars.')
-    expect(user_text).to include('Customer: How much is a map?')
+    expect(captured.dig('messages', 0, 'content')).to include('Customer: How much is a map?')
   end
 
   it 'uses the account name when that account has no website summary' do
@@ -51,6 +53,6 @@ RSpec.describe AgentBots::ReplyService do
     described_class.new(conversation: conversation.reload, content: 'Hello', sender_name: 'Ada').perform
 
     expect(captured['system']).to include('Northwind')
-    expect(captured.dig('messages', 0, 'content')).not_to include('Website summary')
+    expect(captured['system']).not_to include('Website text')
   end
 end

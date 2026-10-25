@@ -272,7 +272,11 @@ class Account < ApplicationRecord
     return unless saved_change_to_custom_attributes?
 
     previous = custom_attributes_before_last_save || {}
-    return if previous['website'].to_s == custom_attributes['website'].to_s
+    website = custom_attributes['website'].to_s
+    website_changed = previous['website'].to_s != website
+    description_changed = previous['bot_description'].to_s != custom_attributes['bot_description'].to_s
+    summary_missing = website.present? && internal_attributes.to_h['bot_website_summary_domain'].to_s != website
+    return unless website_changed || description_changed || summary_missing
 
     Accounts::FetchWebsiteSummaryJob.perform_later(id)
   end

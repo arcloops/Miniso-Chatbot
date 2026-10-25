@@ -1,8 +1,9 @@
 class WebsitePageFetcher
   PAGE_LIMIT = 4
-  PAGE_TEXT_LIMIT = 2_000
-  SUMMARY_LIMIT = 6_000
-  READ_TIMEOUT = 8
+  PAGE_TEXT_LIMIT = 6_000
+  SUMMARY_LIMIT = 14_000
+  READ_TIMEOUT = 6
+  REDIRECT_CODES = [301, 302, 303, 307, 308].freeze
   LINK_HINTS = %w[about service services product products pricing solutions].freeze
 
   def self.summary_for(domain)
@@ -32,31 +33,36 @@ class WebsitePageFetcher
   private
 
   def fetch_html(url)
-    response = HTTParty.get(
-      url,
-      headers: { 'User-Agent' => 'ArcloopsBot/1.0', 'Accept' => 'text/html' },
-      timeout: READ_TIMEOUT,
-      follow_redirects: true
-    )
-    return unless response.success?
-    return unless allowed_host?(response_host(response, url))
+    current = url
+    4.times do
+      response = HTTParty.get(
+        current,
+        headers: { 'User-Agent' => 'ArcloopsBot/1.0', 'Accept' => 'text/html' },
+        timeout: READ_TIMEOUT,
+        follow_redirects: false
+      )
+      if REDIRECT_CODES.include?(response.code.to_i)
+        location = response.headers['location'].to_s
+        return if location.blank?
 
-    body = response.body.to_s
-    return if body.blank?
+        current = URI.join(current, location).to_s
+        return unless allowed_host?(URI(current).host)
 
-    body.byteslice(0, 500_000)
+        next
+      end
+
+      return unless response.success?
+      return unless allowed_host?(URI(current).host)
+
+      body = response.body.to_s
+      return if body.blank?
+
+      return body.byteslice(0, 500_000)
+    end
+    nil
   rescue StandardError => e
     Rails.logger.warn("Website fetch failed for #{url}: #{e.message}")
     nil
-  end
-
-  def response_host(response, url)
-    request = response.request
-    uri = request.last_uri if request.respond_to?(:last_uri)
-    uri ||= request.uri if request.respond_to?(:uri)
-    uri&.host || URI(url).host
-  rescue StandardError
-    URI(url).host
   end
 
   def extra_links(html, base_url)
