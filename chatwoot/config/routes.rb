@@ -77,7 +77,7 @@ Rails.application.routes.draw do
           resource :onboarding, only: [:update] do
             get :help_center_generation
           end
-          resource :product_sheet, only: [:create, :destroy]
+          resources :product_sheets, only: [:index, :show, :create, :destroy]
           resources :agents, only: [:index, :create, :update, :destroy] do
             post :bulk_create, on: :collection
           end

@@ -14,10 +14,12 @@
 #
 # Indexes
 #
-#  index_account_product_sheets_on_account_id  (account_id) UNIQUE
+#  index_account_product_sheets_on_account_id_and_created_at  (account_id,created_at)
 #
 class AccountProductSheet < ApplicationRecord
   belongs_to :account
 
   validates :filename, presence: true
+
+  scope :newest_first, -> { order(id: :desc) }
 end

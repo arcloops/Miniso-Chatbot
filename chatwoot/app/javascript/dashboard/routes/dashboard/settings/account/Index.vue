@@ -49,6 +49,8 @@ export default {
       botDescription: '',
       features: {},
       productSheet: null,
+      productSheets: [],
+      openSheet: null,
       sheetFile: null,
       isUploadingSheet: false,
     };
@@ -139,6 +141,7 @@ export default {
         this.botDescription = customAttributes.bot_description || '';
         this.features = features;
         this.productSheet = this.getAccount(this.accountId).product_sheet || null;
+        this.loadProductSheets();
       } catch (error) {
         // Ignore error
       }
@@ -149,6 +152,35 @@ export default {
       this.sheetFile = file || null;
     },
 
+    async loadProductSheets() {
+      try {
+        const { data } = await AccountAPI.getProductSheets();
+        this.productSheets = data;
+        this.productSheet = data[0] || null;
+        if (
+          this.openSheet &&
+          !data.some(sheet => sheet.id === this.openSheet.id)
+        ) {
+          this.openSheet = null;
+        }
+      } catch (error) {
+        // The list appears after the first upload.
+      }
+    },
+
+    async viewProductSheet(sheet) {
+      if (this.openSheet && this.openSheet.id === sheet.id) {
+        this.openSheet = null;
+        return;
+      }
+      try {
+        const { data } = await AccountAPI.getProductSheet(sheet.id);
+        this.openSheet = data;
+      } catch (error) {
+        useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.ERROR'));
+      }
+    },
+
     async uploadProductSheet() {
       if (!this.sheetFile) return;
       this.isUploadingSheet = true;
@@ -157,7 +189,7 @@ export default {
         await this.$store.dispatch('accounts/get');
         this.sheetFile = null;
         if (this.$refs.sheetInput) this.$refs.sheetInput.value = '';
-        this.initializeAccount();
+        await this.loadProductSheets();
         useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.SUCCESS'));
       } catch (error) {
         useAlert(
@@ -169,12 +201,12 @@ export default {
       }
     },
 
-    async removeProductSheet() {
+    async removeProductSheet(sheet) {
       this.isUploadingSheet = true;
       try {
-        await AccountAPI.deleteProductSheet();
+        await AccountAPI.deleteProductSheet(sheet.id);
         await this.$store.dispatch('accounts/get');
-        this.initializeAccount();
+        await this.loadProductSheets();
         useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.REMOVE_SUCCESS'));
       } catch (error) {
         useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.ERROR'));
@@ -338,25 +370,6 @@ export default {
         with-border
       >
         <div class="grid gap-3">
-          <p v-if="productSheet" class="mb-0 text-sm text-n-slate-12">
-            {{
-              $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.STATUS', {
-                filename: productSheet.filename,
-                count: productSheet.row_count,
-                date: productSheet.updated_at,
-              })
-            }}
-          </p>
-          <p
-            v-if="productSheet && productSheet.truncated"
-            class="mb-0 text-sm text-n-slate-11"
-          >
-            {{
-              $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.TRUNCATED', {
-                count: productSheet.row_count,
-              })
-            }}
-          </p>
           <input
             ref="sheetInput"
             type="file"
@@ -374,16 +387,101 @@ export default {
             >
               {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.BUTTON') }}
             </NextButton>
-            <NextButton
-              v-if="productSheet"
-              type="button"
-              faded
-              slate
-              :disabled="isUploadingSheet"
-              @click="removeProductSheet"
+          </div>
+          <div v-if="productSheets.length" class="grid gap-2">
+            <h5 class="mb-0 text-sm font-medium text-n-slate-12">
+              {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.HISTORY') }}
+            </h5>
+            <div
+              v-for="sheet in productSheets"
+              :key="sheet.id"
+              class="grid gap-2 rounded-lg border border-n-weak p-3"
             >
-              {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.REMOVE') }}
-            </NextButton>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="mb-0 text-sm text-n-slate-12">
+                    {{
+                      $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.STATUS', {
+                        filename: sheet.filename,
+                        count: sheet.row_count,
+                        date: sheet.updated_at,
+                      })
+                    }}
+                  </p>
+                  <p v-if="sheet.current" class="mb-0 text-xs text-n-slate-11">
+                    {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.CURRENT') }}
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  <NextButton
+                    type="button"
+                    faded
+                    slate
+                    sm
+                    @click="viewProductSheet(sheet)"
+                  >
+                    {{
+                      openSheet && openSheet.id === sheet.id
+                        ? $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.HIDE')
+                        : $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.VIEW')
+                    }}
+                  </NextButton>
+                  <NextButton
+                    type="button"
+                    faded
+                    ruby
+                    sm
+                    :disabled="isUploadingSheet"
+                    @click="removeProductSheet(sheet)"
+                  >
+                    {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.REMOVE') }}
+                  </NextButton>
+                </div>
+              </div>
+              <div
+                v-if="openSheet && openSheet.id === sheet.id"
+                class="overflow-auto max-h-80"
+              >
+                <p
+                  v-if="openSheet.rows && openSheet.rows.length > 200"
+                  class="mb-2 text-xs text-n-slate-11"
+                >
+                  {{
+                    $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.SHOWING', {
+                      shown: 200,
+                      count: openSheet.row_count,
+                    })
+                  }}
+                </p>
+                <table class="w-full text-sm text-left">
+                  <thead>
+                    <tr>
+                      <th
+                        v-for="(header, headerIndex) in openSheet.headers"
+                        :key="headerIndex"
+                        class="px-2 py-1 font-medium"
+                      >
+                        {{ header }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, rowIndex) in openSheet.rows.slice(0, 200)"
+                      :key="rowIndex"
+                    >
+                      <td
+                        v-for="(cell, cellIndex) in row"
+                        :key="cellIndex"
+                        class="px-2 py-1 border-t border-n-weak"
+                      >
+                        {{ cell }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </SectionLayout>

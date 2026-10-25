@@ -30,7 +30,7 @@ RSpec.describe AgentBots::ReplyService do
       response
     end
 
-    account.create_product_sheet!(
+    account.product_sheets.create!(
       filename: 'stock.csv',
       headers: ['Product', 'Price', 'Stock'],
       rows: [['Map', '10 dollars', '4']],

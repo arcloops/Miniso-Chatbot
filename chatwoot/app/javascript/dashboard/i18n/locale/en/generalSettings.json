@@ -96,7 +96,12 @@
         "REMOVE_SUCCESS": "Product sheet removed.",
         "ERROR": "Could not update the product sheet.",
         "TRUNCATED": "Only the first {count} products were saved.",
-        "STATUS": "{filename} · {count} products · updated {date}"
+        "STATUS": "{filename} · {count} products · updated {date}",
+        "HISTORY": "Uploaded files",
+        "CURRENT": "Leo uses this file",
+        "VIEW": "View",
+        "HIDE": "Hide",
+        "SHOWING": "Showing {shown} of {count} products"
       },
       "LANGUAGE": {
         "LABEL": "Site language",

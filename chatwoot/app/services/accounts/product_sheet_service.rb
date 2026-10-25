@@ -14,23 +14,21 @@ class Accounts::ProductSheetService
     raise Accounts::SpreadsheetReader::Error, 'Choose a CSV or Excel file.' if upload.blank?
 
     parsed = Accounts::SpreadsheetReader.read(upload.original_filename, upload.read)
-    sheet = @account.product_sheet || @account.build_product_sheet
-    sheet.update!(
+    @account.product_sheets.create!(
       filename: File.basename(upload.original_filename.to_s).slice(0, 180),
       headers: parsed[:headers],
       rows: parsed[:rows],
       row_count: parsed[:rows].size,
       truncated: parsed[:truncated]
     )
-    sheet
   end
 
-  def clear
-    @account.product_sheet&.destroy!
+  def clear(sheet_id)
+    @account.product_sheets.find(sheet_id).destroy!
   end
 
   def self.reply_text(account, query)
-    sheet = AccountProductSheet.find_by(account_id: account.id)
+    sheet = AccountProductSheet.where(account_id: account.id).newest_first.first
     return if sheet.blank? || sheet.rows.blank?
 
     headers = Array(sheet.headers)

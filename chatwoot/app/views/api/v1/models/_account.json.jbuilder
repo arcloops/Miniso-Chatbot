@@ -27,13 +27,14 @@ if resource.custom_attributes.present?
     end
   end
 end
-product_sheet = AccountProductSheet.where(account_id: resource.id).pick(:filename, :row_count, :updated_at, :truncated)
+product_sheet = AccountProductSheet.where(account_id: resource.id).order(id: :desc).pick(:id, :filename, :row_count, :created_at, :truncated)
 if product_sheet.present?
   json.product_sheet do
-    json.filename product_sheet[0]
-    json.row_count product_sheet[1]
-    json.updated_at product_sheet[2]
-    json.truncated product_sheet[3]
+    json.id product_sheet[0]
+    json.filename product_sheet[1]
+    json.row_count product_sheet[2]
+    json.updated_at product_sheet[3]
+    json.truncated product_sheet[4]
   end
 end
 json.domain @account.domain

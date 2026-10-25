@@ -23,14 +23,22 @@ class AccountAPI extends ApiClient {
     return response.data.cache_keys;
   }
 
+  getProductSheets() {
+    return axios.get(`${this.url}product_sheets`);
+  }
+
+  getProductSheet(id) {
+    return axios.get(`${this.url}product_sheets/${id}`);
+  }
+
   uploadProductSheet(file) {
     const form = new FormData();
     form.append('file', file);
-    return axios.post(`${this.url}product_sheet`, form);
+    return axios.post(`${this.url}product_sheets`, form);
   }
 
-  deleteProductSheet() {
-    return axios.delete(`${this.url}product_sheet`);
+  deleteProductSheet(id) {
+    return axios.delete(`${this.url}product_sheets/${id}`);
   }
 }
 
