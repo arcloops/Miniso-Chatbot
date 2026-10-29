@@ -100,6 +100,8 @@ class Accounts::ProductSheetService
       [score, cells] if score.positive?
     end
     scored.sort_by! { |score, _row| -score }
+    return exact_photo_rows(sheet, image_note) if image_visible
+
     if scored.empty? || scored.first.first < 2
       return photo_catalog(sheet, attached: image_visible) if photo_attached
       if %w[pending processing].include?(sheet.image_status)
@@ -121,21 +123,58 @@ class Accounts::ProductSheetService
   end
 
   def self.photo_catalog(sheet, attached:)
-    rows = Array(sheet.rows).first(150)
-    lines = rows.filter_map do |row|
+    rows = Array(sheet.rows)
+    if attached && rows.size > 40
+      return "Product sheet #{sheet.filename} has #{rows.size} products. The photo is attached. " \
+             'Give a price only when the name printed on the item is clearly one row. ' \
+             'The same color or the same kind of product is the wrong product. ' \
+             'If you are not sure of the exact name, ask for the name on the package and do not give a price.'
+    end
+
+    lines = rows.first(40).filter_map do |row|
       line = public_cells(row).reject(&:blank?).first(6).join(' | ')
       line.presence
     end
     intro = "Product sheet #{sheet.filename}. Columns: #{Array(sheet.headers).join(' | ')}."
     instruction = if attached
-                    'The customer photo is attached. Find that exact product in the rows below. ' \
-                      'Give the price and stock only from the matching row. Do not say you cannot see the photo. ' \
-                      'If none of these rows is the product in the photo, ask for the product name.'
+                    'The customer photo is attached. Give a price only when the name printed on the item is the same as one row. ' \
+                      'The same color or the same kind of product is not a match. If you are not sure, ask for the name on the package and do not give a price.'
                   else
                     'The customer sent a product photo. Choose only from the rows below. Do not invent a product that is not listed. ' \
                       'If none of these rows is the item, ask for the product name.'
                   end
     "#{intro}\n#{instruction}\n#{lines.join("\n")}"
+  end
+
+  def self.exact_photo_rows(sheet, image_note)
+    vague = %w[
+      red blue green pink black white yellow purple orange brown grey gray gold silver beige navy
+      mini cute small large soft plastic cotton cartoon style design piece item product photo picture image
+      unknown matte glossy pack packs set sets box boxes bag bags toy toys bottle bottles cup cups size color
+    ]
+    terms = image_note.to_s.downcase.scan(/[[:alnum:]]{4,}/).uniq - STOPWORDS - vague
+    scored = Array(sheet.rows).filter_map do |row|
+      text = public_cells(row).join(' ').downcase
+      score = terms.count { |term| text.match?(/\b#{Regexp.escape(term)}\b/) }
+      [score, row] if score.positive?
+    end
+    scored.sort_by! { |score, _row| -score }
+    intro = "Product sheet #{sheet.filename}. Columns: #{Array(sheet.headers).join(' | ')}."
+    if terms.empty? || scored.empty?
+      return "#{intro}\nThe photo does not show a product name that matches one row. Ask for the name printed on the product. " \
+             'Do not guess a similar product and do not give a price.'
+    end
+
+    top_score = scored.first.first
+    leaders = scored.take_while { |score, _row| score == top_score }.first(5)
+    lines = leaders.map { |_score, row| public_cells(row).reject(&:blank?).first(4).join(' | ') }
+    distinctive = terms.any? { |term| term.length >= 6 }
+    if leaders.one? && (top_score >= 2 || distinctive)
+      "#{intro}\nThis row matches the name in the photo. Give its price and stock only if the photo is this exact product. " \
+        "If it is a different size, character, or variant, ask which one and do not give a price:\n#{lines.first}"
+    else
+      "#{intro}\nThese rows only partly match the photo. Ask which product it is. Do not give a price yet:\n#{lines.join("\n")}"
+    end
   end
 
   def self.unmatched_photo(sheet)

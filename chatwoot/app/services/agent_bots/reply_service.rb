@@ -53,9 +53,9 @@ class AgentBots::ReplyService
     parts << 'Answer from the company description, the daily product sheet, and the website text. ' \
              'For stock and prices, use the product sheet. Use the website for what the company does.'
     parts << if customer_photo.present?
-               'The customer photo is attached to their message. Look at that photo. Do not say you cannot see it. ' \
-                 'Use the photo only to choose a product sheet row. Price and stock come from that row. ' \
-                 'If more than one row could be the item in the photo, ask which one and do not give a price.'
+               'The customer photo is attached. Read the product name, character, or model printed on the item. ' \
+                 'Choose a spreadsheet row only when that exact name matches. The same color or the same kind of product is the wrong product. ' \
+                 'If you are not sure of the exact row, ask which product it is and do not give a price.'
              elsif photo_message?
                'The customer sent a product photo. Choose the product only from the product sheet rows in this prompt. ' \
                  'Do not invent a product that is not listed. Price and stock come from the matching row.'
@@ -98,7 +98,7 @@ class AgentBots::ReplyService
           data: Base64.strict_encode64(photo[:bytes])
         }
       },
-      { type: 'text', text: "#{text}\n\nThe product photo is attached above. Identify that product from the product sheet." }
+      { type: 'text', text: "#{text}\n\nThe product photo is attached above. Name the product only if a spreadsheet row is that exact item. If it is only similar, ask which product it is and do not give a price." }
     ]
   end
 

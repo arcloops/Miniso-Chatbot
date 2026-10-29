@@ -3,11 +3,11 @@ class Accounts::ImageDescriber
   MODEL = 'claude-haiku-4-5'
   PROMPT = <<~TEXT.squish
     Look at this product photo. Reply with exactly these four lines and nothing else.
-    Summary: one sentence about appearance, packaging, and visible variant.
+    Summary: the exact product name printed on the item, then one short appearance note.
     Color: the main colors, or unknown.
-    Label: readable brand or product words, or unknown.
-    Model: a visible model or sku, or unknown.
-    Do not guess a price, stock count, or specification that is not printed on the item.
+    Label: the words printed on the package, copied as written, or unknown.
+    Model: a visible model, sku, or character name, or unknown.
+    Do not guess a price, stock count, or a product name that is not printed or unmistakably shown.
   TEXT
 
   def self.describe(bytes, content_type)
