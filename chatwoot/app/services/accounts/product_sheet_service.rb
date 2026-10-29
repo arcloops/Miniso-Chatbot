@@ -15,15 +15,23 @@ class Accounts::ProductSheetService
 
     parsed = Accounts::SpreadsheetReader.read(upload.original_filename, upload.read)
     sheet = @account.product_sheets.create!(
-      filename: File.basename(upload.original_filename.to_s).slice(0, 180),
+      filename: safe_filename(upload.original_filename),
       headers: parsed[:headers],
       rows: parsed[:rows],
       row_count: parsed[:rows].size,
       truncated: parsed[:truncated]
     )
-    store_embedded_images(sheet, parsed[:images])
-    self.class.queue_image_index(sheet)
+    begin
+      store_embedded_images(sheet, parsed[:images])
+      self.class.queue_image_index(sheet)
+    rescue StandardError => e
+      Rails.logger.warn("[ProductSheet] pictures not stored #{e.class}")
+    end
     sheet
+  end
+
+  def safe_filename(name)
+    File.basename(name.to_s).delete("\u0000").slice(0, 180).presence || 'products.csv'
   end
 
   def store_embedded_images(sheet, images)
@@ -119,8 +127,10 @@ class Accounts::ProductSheetService
   end
 
   def self.queue_image_index(sheet)
+    return unless sheet.has_attribute?(:image_status)
+
     found = Accounts::CatalogImageIndexer.targets(sheet)
-    embedded = sheet.product_images.where(status: 'pending').count
+    embedded = sheet.respond_to?(:product_images) ? sheet.product_images.where(status: 'pending').count : 0
     stats = { 'discovered' => found.size + embedded, 'indexed' => 0, 'reused' => 0, 'failed' => 0, 'skipped' => 0 }
     if found.empty? && embedded.zero?
       sheet.update!(image_status: 'none', image_stats: stats)

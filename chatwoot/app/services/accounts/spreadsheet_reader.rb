@@ -43,13 +43,25 @@ class Accounts::SpreadsheetReader
 
   def csv_table
     require 'csv'
-    text = @body.dup.force_encoding('UTF-8')
-    text = text.encode('UTF-8', invalid: :replace, undef: :replace).sub(/\A\uFEFF/, '')
+    text = csv_text
     first = text.lines.first.to_s
     col_sep = first.count(';') > first.count(',') ? ';' : ','
     CSV.parse(text, col_sep: col_sep, liberal_parsing: true)
-  rescue CSV::MalformedCSVError
+  rescue CSV::MalformedCSVError, ArgumentError, EncodingError
     raise Error, 'That CSV could not be read. Save it again from Excel and upload the new file.'
+  end
+
+  def csv_text
+    raw = @body.dup
+    text = if raw.byteslice(0, 2) == "\xFE\xFF".b
+             raw.byteslice(2..-1).force_encoding('UTF-16BE').encode('UTF-8')
+           elsif raw.byteslice(0, 2) == "\xFF\xFE".b || raw.count("\x00") > raw.bytesize / 4
+             raw.sub("\xFF\xFE".b, ''.b).force_encoding('UTF-16LE').encode('UTF-8')
+           else
+             encoded = raw.force_encoding('UTF-8')
+             encoded.valid_encoding? ? encoded : encoded.scrub
+           end
+    text.sub(/\A\uFEFF/, '').delete("\u0000")
   end
 
   def xlsx_rows(entries)
@@ -204,7 +216,7 @@ class Accounts::SpreadsheetReader
   end
 
   def clip_cell(value)
-    text = value.to_s.strip.gsub(/[ \t\f\v]+/, ' ')
+    text = value.to_s.delete("\u0000").strip.gsub(/[ \t\f\v]+/, ' ')
     limit = text.match?(%r{https?://}i) ? MAX_URL_CELL : MAX_CELL
     text[0, limit]
   end

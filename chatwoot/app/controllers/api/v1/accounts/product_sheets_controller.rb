@@ -4,7 +4,7 @@ class Api::V1::Accounts::ProductSheetsController < Api::V1::Accounts::BaseContro
 
   def index
     sheets = Current.account.product_sheets.newest_first.limit(60).select(
-      :id, :filename, :row_count, :truncated, :created_at, :image_status, :image_stats
+      :id, :filename, :row_count, :truncated, :created_at, *image_columns
     )
     current_id = sheets.first&.id
     render json: sheets.map { |sheet| sheet_summary(sheet, current_id) }
@@ -22,6 +22,9 @@ class Api::V1::Accounts::ProductSheetsController < Api::V1::Accounts::BaseContro
     render json: sheet_summary(sheet, sheet.id)
   rescue Accounts::SpreadsheetReader::Error => e
     render json: { error: e.message }, status: :unprocessable_entity
+  rescue ActiveRecord::ActiveRecordError => e
+    Rails.logger.warn("[ProductSheet] save failed #{e.class}")
+    render json: { error: 'The spreadsheet could not be saved. Save it as CSV from Excel and upload that file.' }, status: :unprocessable_entity
   end
 
   def destroy
@@ -44,8 +47,12 @@ class Api::V1::Accounts::ProductSheetsController < Api::V1::Accounts::BaseContro
       updated_at: sheet.created_at,
       truncated: sheet.truncated,
       current: sheet.id == current_id,
-      image_status: sheet.image_status,
-      image_stats: sheet.image_stats || {}
+      image_status: sheet.has_attribute?(:image_status) ? sheet.image_status : 'none',
+      image_stats: sheet.has_attribute?(:image_stats) ? (sheet.image_stats || {}) : {}
     }
+  end
+
+  def image_columns
+    AccountProductSheet.column_names.map(&:to_sym) & %i[image_status image_stats]
   end
 end
