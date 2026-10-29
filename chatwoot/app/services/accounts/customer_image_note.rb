@@ -41,7 +41,7 @@ class Accounts::CustomerImageNote
   def self.bytes_for(attachment)
     if attachment.file.attached?
       blob = attachment.file.blob
-      return if blob.byte_size > Accounts::SafeImageFetch::MAX_BYTES
+      return if blob.byte_size > Accounts::SafeImageFetch::SOURCE_MAX_BYTES
 
       bytes = blob.download.to_s.b
       content_type = Accounts::SafeImageFetch.image_type(bytes)

@@ -1,5 +1,6 @@
 class Accounts::SafeImageFetch
   MAX_BYTES = 1_500_000
+  SOURCE_MAX_BYTES = 8 * 1024 * 1024
   OPEN_TIMEOUT = 4
   READ_TIMEOUT = 8
 

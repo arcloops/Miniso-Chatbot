@@ -69,6 +69,16 @@ class Accounts::ImageDescriber
   end
 
   def shrink
+    shrunk = thumbnail
+    return shrunk if shrunk
+
+    type = Accounts::SafeImageFetch.image_type(@bytes.to_s.b)
+    return if type.blank? || @bytes.bytesize > 3_500_000
+
+    { bytes: @bytes, content_type: type }
+  end
+
+  def thumbnail
     require 'vips'
     image = Vips::Image.new_from_buffer(@bytes, '')
     image = image.thumbnail_image(512, size: :down)
@@ -77,10 +87,7 @@ class Accounts::ImageDescriber
 
     { bytes: bytes, content_type: 'image/jpeg' }
   rescue StandardError
-    type = Accounts::SafeImageFetch.image_type(@bytes.to_s.b)
-    return if type.blank? || @bytes.bytesize > Accounts::SafeImageFetch::MAX_BYTES
-
-    { bytes: @bytes, content_type: type }
+    nil
   end
 
   def parse(text)

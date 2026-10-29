@@ -63,6 +63,15 @@ RSpec.describe Accounts::ProductSheetService do
     expect(text).to include('did not match')
     expect(text).not_to include('80')
   end
+
+  it 'matches a photo to the product name when the sheet has no picture' do
+    sheet
+    text = described_class.reply_text(account, 'how much is this', image_note: 'a matte blue pen')
+
+    expect(text).to include('Confirmed catalog row')
+    expect(text).to include('80')
+    expect(text).not_to include('40')
+  end
 end
 
 RSpec.describe Accounts::CatalogImageIndexer do

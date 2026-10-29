@@ -77,25 +77,26 @@ class Accounts::ProductSheetService
       return 'The customer sent a photo that could not be read. Ask them to name the product. Do not give a price or stock count.'
     end
 
-    images = AccountProductImage.readable.where(product_sheet_id: sheet.id).select(:row_index, :visual_summary)
-    return unmatched_photo(sheet) if images.blank?
+    pictures = AccountProductImage.readable.where(product_sheet_id: sheet.id).group_by(&:row_index)
+    scored = Array(sheet.rows).each_with_index.filter_map do |row, index|
+      cells = Array(row)
+      next if cells.all? { |cell| cell.to_s.strip.blank? }
 
-    scored = images.group_by(&:row_index).filter_map do |index, pictures|
-      row = Array(sheet.rows[index])
-      next if row.blank?
-
-      blob = "#{pictures.map(&:visual_summary).join(' ')} #{row.join(' ')}"
-      score = term_score(image_note, blob)
-      [score, row] if score.positive?
+      summary = Array(pictures[index]).map(&:visual_summary).join(' ')
+      score = term_score(image_note, "#{summary} #{cells.join(' ')}")
+      [score, cells] if score.positive?
     end
     scored.sort_by! { |score, _row| -score }
+    if (scored.empty? || scored.first.first < 2) && %w[pending processing].include?(sheet.image_status)
+      return 'Product pictures from the sheet are still being read. Ask the customer for the product name. Do not give a price or stock count.'
+    end
     return unmatched_photo(sheet) if scored.empty? || scored.first.first < 2
 
     top_score = scored.first.first
     chosen = scored.take_while { |score, _row| score >= top_score - 1 }.first(3)
     lines = chosen.map { |_score, row| public_cells(row).join(' | ') }
     intro = "Product sheet #{sheet.filename}. Columns: #{Array(sheet.headers).join(' | ')}."
-    if chosen.one? && top_score >= 3
+    if chosen.one? && top_score >= 2
       "#{intro}\nConfirmed catalog row from the customer photo. Use only this row for price and stock:\n#{lines.first}"
     else
       "#{intro}\nPossible catalog rows from the customer photo. Ask which one they mean before giving a price:\n#{lines.join("\n")}"
@@ -112,9 +113,9 @@ class Accounts::ProductSheetService
   end
 
   def self.term_score(note, blob)
-    terms = note.to_s.downcase.scan(/[[:alnum:]]{4,}/).uniq - STOPWORDS - %w[unknown summary color label model photo picture image]
+    terms = note.to_s.downcase.scan(/[[:alnum:]]{3,}/).uniq - STOPWORDS - %w[unknown summary color label model photo picture image]
     text = blob.to_s.downcase
-    terms.count { |term| text.include?(term) }
+    terms.count { |term| text.match?(/\b#{Regexp.escape(term)}\b/) }
   end
 
   def self.queue_image_index(sheet)

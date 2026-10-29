@@ -18,7 +18,7 @@
 #
 class AccountProductSheet < ApplicationRecord
   belongs_to :account
-  has_many :product_images, class_name: 'AccountProductImage', dependent: :delete_all
+  has_many :product_images, class_name: 'AccountProductImage', dependent: :destroy
 
   validates :filename, presence: true
 

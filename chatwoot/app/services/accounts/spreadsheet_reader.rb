@@ -21,14 +21,14 @@ class Accounts::SpreadsheetReader
     raise Error, 'The file must be 15 MB or smaller.' if @body.bytesize > MAX_BYTES
 
     images = []
-    table = if xlsx?
-              entries = zip_entries
-              images.concat(embedded_images(entries))
-              xlsx_rows(entries)
-            else
-              csv_table
-            end
-    normalize(table, images)
+    table, source_rows = if xlsx?
+                           entries = zip_entries
+                           images.concat(embedded_images(entries))
+                           xlsx_rows(entries)
+                         else
+                           [csv_table, nil]
+                         end
+    normalize(table, images, source_rows)
   end
 
   private
@@ -57,7 +57,8 @@ class Accounts::SpreadsheetReader
     raise Error, 'The Excel file has no sheet.' if sheet_name.blank?
 
     strings = shared_strings(entries['xl/sharedStrings.xml'])
-    sheet_rows(entries[sheet_name], strings)
+    numbered = sheet_rows(entries[sheet_name], strings)
+    [numbered.map(&:last), numbered.map(&:first)]
   rescue Nokogiri::XML::SyntaxError, Zlib::Error
     raise Error, 'That Excel file could not be read. Save it as .xlsx and upload it again.'
   end
@@ -138,7 +139,12 @@ class Accounts::SpreadsheetReader
     require 'nokogiri'
     document = Nokogiri::XML(xml)
     document.remove_namespaces!
-    document.css('row').map { |row| cells_for(row, strings) }
+    rows = document.css('row')
+    rows.each_with_index.map do |row, index|
+      number = row['r'].to_i
+      number = index + 1 if number.zero?
+      [number - 1, cells_for(row, strings)]
+    end
   end
 
   def cells_for(row, strings)
@@ -171,21 +177,29 @@ class Accounts::SpreadsheetReader
     end
   end
 
-  def normalize(table, embedded)
-    inline, table = pull_inline_images(table)
-    cleaned = Array(table).filter_map do |row|
+  def normalize(table, embedded, source_rows)
+    source_rows = Array(source_rows)
+    source_rows = (0...Array(table).size).to_a if source_rows.empty?
+    inline, table = pull_inline_images(table, source_rows)
+    header = Array(table.first).first(MAX_COLUMNS).map { |cell| clip_cell(cell) }
+    kept = []
+    kept_sources = []
+    Array(table).drop(1).each_with_index do |row, offset|
       cells = Array(row).first(MAX_COLUMNS).map { |cell| clip_cell(cell) }
-      cells if cells.any?(&:present?)
-    end
-    raise Error, 'The spreadsheet has no product rows.' if cleaned.size < 2
+      next unless cells.any?(&:present?)
 
-    width = cleaned.map(&:size).max
-    headers = cleaned.first.fill('', cleaned.first.size...width).each_with_index.map do |cell, index|
+      kept << cells
+      kept_sources << source_rows[offset + 1]
+    end
+    raise Error, 'The spreadsheet has no product rows.' if header.blank? || kept.empty?
+
+    width = ([header] + kept).map(&:size).max
+    headers = header.fill('', header.size...width).each_with_index.map do |cell, index|
       cell.presence || "Column #{index + 1}"
     end
-    rows = cleaned.drop(1).map { |row| row.fill('', row.size...width) }
+    rows = kept.map { |row| row.fill('', row.size...width) }
     truncated = rows.size > MAX_ROWS
-    images = place_images(inline + Array(embedded), [rows.size, MAX_ROWS].min)
+    images = place_images(inline + Array(embedded), kept_sources.first(MAX_ROWS))
     { headers: headers, rows: rows.first(MAX_ROWS), truncated: truncated, images: images }
   end
 
@@ -195,14 +209,15 @@ class Accounts::SpreadsheetReader
     text[0, limit]
   end
 
-  def pull_inline_images(table)
+  def pull_inline_images(table, source_rows)
     images = []
     cleaned = Array(table).each_with_index.map do |row, index|
       next row if index.zero?
 
       Array(row).map do |cell|
-        image = inline_image(cell, index - 1)
+        image = inline_image(cell)
         if image
+          image[:source_row] = source_rows[index]
           images << image
           ''
         else
@@ -213,7 +228,7 @@ class Accounts::SpreadsheetReader
     [images, cleaned]
   end
 
-  def inline_image(cell, row_index)
+  def inline_image(cell)
     text = cell.to_s.strip
     payload = text.match(/\Adata:image\/(?:jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+\/=\s]+)\z/i)&.[](1)
     payload = text if payload.blank? && text.length > 200 && !text.match?(%r{\Ahttps?://}i)
@@ -221,9 +236,9 @@ class Accounts::SpreadsheetReader
 
     bytes = Base64.decode64(payload).b
     content_type = Accounts::SafeImageFetch.image_type(bytes)
-    return if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::MAX_BYTES
+    return if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::SOURCE_MAX_BYTES
 
-    { row_index: row_index, bytes: bytes, content_type: content_type }
+    { bytes: bytes, content_type: content_type }
   rescue ArgumentError
     nil
   end
@@ -237,9 +252,9 @@ class Accounts::SpreadsheetReader
 
       bytes = content.to_s.b
       content_type = Accounts::SafeImageFetch.image_type(bytes)
-      next if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::MAX_BYTES
+      next if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::SOURCE_MAX_BYTES
 
-      { row_index: nil, bytes: bytes, content_type: content_type }
+      { source_row: nil, bytes: bytes, content_type: content_type }
     end
   end
 
@@ -261,9 +276,9 @@ class Accounts::SpreadsheetReader
         embed = anchor.at('blip')&.[]('embed')
         bytes = media_bytes(entries, targets[embed])
         content_type = Accounts::SafeImageFetch.image_type(bytes)
-        next if content_type.blank?
+        next if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::SOURCE_MAX_BYTES
 
-        images << { row_index: row - 1, bytes: bytes, content_type: content_type }
+        images << { source_row: row, bytes: bytes, content_type: content_type }
       end
     end
     images
@@ -286,20 +301,38 @@ class Accounts::SpreadsheetReader
     entries[name].to_s.b
   end
 
-  def place_images(images, row_count)
+  def place_images(images, kept_sources)
     next_row = 0
+    seen = {}
     images.filter_map do |image|
       bytes = image[:bytes].to_s.b
       next if bytes.blank?
 
-      row_index = image[:row_index]
-      if row_index.nil?
-        row_index = next_row
-        next_row += 1
-      end
-      row_index = 0 if row_index.negative?
-      row_index = row_count - 1 if row_count.positive? && row_index >= row_count
+      digest = Digest::SHA256.hexdigest(bytes)
+      next if seen[digest]
+
+      seen[digest] = true
+      row_index = if image[:source_row].nil?
+                    current = next_row
+                    next_row += 1
+                    current
+                  else
+                    data_index_for(image[:source_row], kept_sources)
+                  end
+      next if row_index.nil?
+
       image.merge(row_index: row_index, bytes: bytes)
     end.first(80)
+  end
+
+  def data_index_for(source, kept_sources)
+    exact = kept_sources.index(source)
+    return exact if exact
+
+    later = kept_sources.index { |kept| kept && source && kept > source }
+    return later if later
+    return if kept_sources.empty?
+
+    kept_sources.length - 1
   end
 end
