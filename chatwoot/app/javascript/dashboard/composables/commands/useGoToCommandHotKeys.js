@@ -17,7 +17,6 @@ import {
   ICON_MEGAPHONE,
   ICON_MESSAGE_CIRCLE,
   ICON_MESSAGE_QUOTE,
-  ICON_PHONE,
   ICON_REPEAT,
   ICON_SQUARE_USER,
   ICON_TAGS,
@@ -51,13 +50,6 @@ const GO_TO_COMMANDS = [
     section: SECTION_GENERAL,
     icon: ICON_CONTACT,
     routeName: 'contacts_dashboard_index',
-  },
-  {
-    id: 'goto_calls_dashboard',
-    title: 'COMMAND_BAR.COMMANDS.GO_TO_CALLS_DASHBOARD',
-    section: SECTION_GENERAL,
-    icon: ICON_PHONE,
-    routeName: 'calls_dashboard_index',
   },
   {
     id: 'goto_campaigns',
