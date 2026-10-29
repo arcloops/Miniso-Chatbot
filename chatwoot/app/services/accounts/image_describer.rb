@@ -77,10 +77,10 @@ class Accounts::ImageDescriber
 
     { bytes: bytes, content_type: 'image/jpeg' }
   rescue StandardError
-    return if @bytes.bytesize > 400_000
-    return unless @content_type.to_s.start_with?('image/')
+    type = Accounts::SafeImageFetch.image_type(@bytes.to_s.b)
+    return if type.blank? || @bytes.bytesize > Accounts::SafeImageFetch::MAX_BYTES
 
-    { bytes: @bytes, content_type: @content_type }
+    { bytes: @bytes, content_type: type }
   end
 
   def parse(text)

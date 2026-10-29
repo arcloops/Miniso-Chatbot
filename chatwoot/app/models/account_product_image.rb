@@ -19,5 +19,7 @@ class AccountProductImage < ApplicationRecord
   belongs_to :account
   belongs_to :product_sheet, class_name: 'AccountProductSheet'
 
+  has_one_attached :file
+
   scope :readable, -> { where(status: 'completed').where.not(visual_summary: [nil, '']) }
 end

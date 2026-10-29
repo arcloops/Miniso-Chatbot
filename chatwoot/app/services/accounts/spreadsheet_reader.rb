@@ -1,7 +1,7 @@
 class Accounts::SpreadsheetReader
   class Error < StandardError; end
 
-  MAX_BYTES = 5 * 1024 * 1024
+  MAX_BYTES = 15 * 1024 * 1024
   MAX_ROWS = 8_000
   MAX_COLUMNS = 16
   MAX_CELL = 80
@@ -18,10 +18,17 @@ class Accounts::SpreadsheetReader
 
   def read
     raise Error, 'The file is empty.' if @body.empty?
-    raise Error, 'The file must be 5 MB or smaller.' if @body.bytesize > MAX_BYTES
+    raise Error, 'The file must be 15 MB or smaller.' if @body.bytesize > MAX_BYTES
 
-    table = xlsx? ? xlsx_table : csv_table
-    normalize(table)
+    images = []
+    table = if xlsx?
+              entries = zip_entries
+              images.concat(embedded_images(entries))
+              xlsx_rows(entries)
+            else
+              csv_table
+            end
+    normalize(table, images)
   end
 
   private
@@ -45,8 +52,7 @@ class Accounts::SpreadsheetReader
     raise Error, 'That CSV could not be read. Save it again from Excel and upload the new file.'
   end
 
-  def xlsx_table
-    entries = zip_entries
+  def xlsx_rows(entries)
     sheet_name = first_sheet_name(entries)
     raise Error, 'The Excel file has no sheet.' if sheet_name.blank?
 
@@ -165,7 +171,8 @@ class Accounts::SpreadsheetReader
     end
   end
 
-  def normalize(table)
+  def normalize(table, embedded)
+    inline, table = pull_inline_images(table)
     cleaned = Array(table).filter_map do |row|
       cells = Array(row).first(MAX_COLUMNS).map { |cell| clip_cell(cell) }
       cells if cells.any?(&:present?)
@@ -178,12 +185,121 @@ class Accounts::SpreadsheetReader
     end
     rows = cleaned.drop(1).map { |row| row.fill('', row.size...width) }
     truncated = rows.size > MAX_ROWS
-    { headers: headers, rows: rows.first(MAX_ROWS), truncated: truncated }
+    images = place_images(inline + Array(embedded), [rows.size, MAX_ROWS].min)
+    { headers: headers, rows: rows.first(MAX_ROWS), truncated: truncated, images: images }
   end
 
   def clip_cell(value)
     text = value.to_s.strip.gsub(/[ \t\f\v]+/, ' ')
     limit = text.match?(%r{https?://}i) ? MAX_URL_CELL : MAX_CELL
     text[0, limit]
+  end
+
+  def pull_inline_images(table)
+    images = []
+    cleaned = Array(table).each_with_index.map do |row, index|
+      next row if index.zero?
+
+      Array(row).map do |cell|
+        image = inline_image(cell, index - 1)
+        if image
+          images << image
+          ''
+        else
+          cell
+        end
+      end
+    end
+    [images, cleaned]
+  end
+
+  def inline_image(cell, row_index)
+    text = cell.to_s.strip
+    payload = text.match(/\Adata:image\/(?:jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+\/=\s]+)\z/i)&.[](1)
+    payload = text if payload.blank? && text.length > 200 && !text.match?(%r{\Ahttps?://}i)
+    return if payload.blank?
+
+    bytes = Base64.decode64(payload).b
+    content_type = Accounts::SafeImageFetch.image_type(bytes)
+    return if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::MAX_BYTES
+
+    { row_index: row_index, bytes: bytes, content_type: content_type }
+  rescue ArgumentError
+    nil
+  end
+
+  def embedded_images(entries)
+    anchored = anchored_images(entries)
+    return anchored if anchored.any?
+
+    entries.filter_map do |name, content|
+      next unless name.match?(%r{\Axl/media/[^/]+\z}i)
+
+      bytes = content.to_s.b
+      content_type = Accounts::SafeImageFetch.image_type(bytes)
+      next if content_type.blank? || bytes.bytesize > Accounts::SafeImageFetch::MAX_BYTES
+
+      { row_index: nil, bytes: bytes, content_type: content_type }
+    end
+  end
+
+  def anchored_images(entries)
+    require 'nokogiri'
+    images = []
+    entries.each do |name, content|
+      next unless name.match?(%r{\Axl/drawings/drawing\d+\.xml\z})
+
+      rels_name = name.sub('xl/drawings/', 'xl/drawings/_rels/').sub(/\.xml\z/, '.xml.rels')
+      rels = entries[rels_name]
+      next if rels.blank?
+
+      targets = relationship_targets(rels)
+      document = Nokogiri::XML(content)
+      document.remove_namespaces!
+      document.css('twoCellAnchor, oneCellAnchor').each do |anchor|
+        row = anchor.at('from')&.at('row')&.text.to_i
+        embed = anchor.at('blip')&.[]('embed')
+        bytes = media_bytes(entries, targets[embed])
+        content_type = Accounts::SafeImageFetch.image_type(bytes)
+        next if content_type.blank?
+
+        images << { row_index: row - 1, bytes: bytes, content_type: content_type }
+      end
+    end
+    images
+  rescue Nokogiri::XML::SyntaxError
+    []
+  end
+
+  def relationship_targets(xml)
+    require 'nokogiri'
+    document = Nokogiri::XML(xml)
+    document.remove_namespaces!
+    document.css('Relationship').to_h { |node| [node['Id'], node['Target'].to_s] }
+  end
+
+  def media_bytes(entries, target)
+    return ''.b if target.blank?
+
+    name = target.sub(%r{\A/}, '').sub(%r{\A\.\./}, 'xl/')
+    name = "xl/#{name}" unless name.start_with?('xl/')
+    entries[name].to_s.b
+  end
+
+  def place_images(images, row_count)
+    next_row = 0
+    images.filter_map do |image|
+      bytes = image[:bytes].to_s.b
+      next if bytes.blank?
+
+      row_index = image[:row_index]
+      if row_index.nil?
+        row_index = next_row
+        next_row += 1
+      end
+      row_index = 0 if row_index.negative?
+      row_index = row_count - 1 if row_count.positive? && row_index >= row_count
+      image.merge(row_index: row_index, bytes: bytes)
+    end.first(80)
   end
 end

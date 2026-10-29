@@ -89,7 +89,7 @@
       },
       "PRODUCT_SHEET": {
         "TITLE": "Daily product sheet",
-        "NOTE": "Upload today's CSV or Excel file of products, stock, and prices. A column of image links is read once when you upload. Replace the file each day. Leo checks this sheet and the website when a customer asks.",
+        "NOTE": "Upload today's CSV or Excel file. Put a picture in the Excel file, or put an image link in a column named Image. Leo reads the picture file itself. A customer photo is read the same way.",
         "BUTTON": "Upload today's sheet",
         "REMOVE": "Remove sheet",
         "SUCCESS": "Product sheet updated. Leo will use it on the next customer message.",

@@ -43,7 +43,7 @@ class Accounts::SafeImageFetch
     body = response.body.to_s.b
     return if body.bytesize < 32 || body.bytesize > MAX_BYTES
 
-    content_type = image_type(body)
+    content_type = self.class.image_type(body)
     return if content_type.blank?
 
     { bytes: body, content_type: content_type }
@@ -92,11 +92,12 @@ class Accounts::SafeImageFetch
     [301, 302, 303, 307, 308].include?(response.code.to_i)
   end
 
-  def image_type(body)
-    return 'image/jpeg' if body.byteslice(0, 3) == "\xFF\xD8\xFF".b
-    return 'image/png' if body.byteslice(0, 8) == "\x89PNG\r\n\x1A\n".b
-    return 'image/gif' if body.byteslice(0, 6) == 'GIF87a'.b || body.byteslice(0, 6) == 'GIF89a'.b
-    return 'image/webp' if body.byteslice(0, 4) == 'RIFF'.b && body.byteslice(8, 4) == 'WEBP'.b
+  def self.image_type(body)
+    bytes = body.to_s.b
+    return 'image/jpeg' if bytes.byteslice(0, 3) == "\xFF\xD8\xFF".b
+    return 'image/png' if bytes.byteslice(0, 8) == "\x89PNG\r\n\x1A\n".b
+    return 'image/gif' if bytes.byteslice(0, 6) == 'GIF87a'.b || bytes.byteslice(0, 6) == 'GIF89a'.b
+    return 'image/webp' if bytes.byteslice(0, 4) == 'RIFF'.b && bytes.byteslice(8, 4) == 'WEBP'.b
 
     nil
   end

@@ -15,13 +15,19 @@ class Accounts::CatalogImageIndexer
     return if @sheet.blank?
 
     found = targets
-    if found.empty?
+    file_count = @sheet.product_images.where(status: 'pending').count
+    if found.empty? && file_count.zero?
       @sheet.update!(image_status: 'none', image_stats: empty_stats)
       return
     end
 
-    @sheet.update!(image_status: 'processing', image_stats: empty_stats.merge('discovered' => found.size))
-    stats = index(found)
+    @sheet.update!(image_status: 'processing', image_stats: empty_stats.merge('discovered' => found.size + file_count))
+    stats = index(found, file_count)
+    index_files(stats)
+    Rails.logger.info(
+      "[CatalogImageIndexer] sheet=#{@sheet.id} discovered=#{stats['discovered']} indexed=#{stats['indexed']} " \
+      "reused=#{stats['reused']} failed=#{stats['failed']}"
+    )
     status = if stats['indexed'].zero? && stats['reused'].zero? && stats['failed'].positive?
                'failed'
              else
@@ -52,8 +58,8 @@ class Accounts::CatalogImageIndexer
 
   private
 
-  def index(found)
-    stats = empty_stats.merge('discovered' => found.size, 'skipped' => [found.size - MAX_IMAGES, 0].max)
+  def index(found, file_count)
+    stats = empty_stats.merge('discovered' => found.size + file_count, 'skipped' => [found.size - MAX_IMAGES, 0].max)
     seen = {}
     found.first(MAX_IMAGES).each do |target|
       digest = Digest::SHA256.hexdigest(target[:url])
@@ -99,11 +105,50 @@ class Accounts::CatalogImageIndexer
       seen[digest] = saved
       stats['indexed'] += 1
     end
-    Rails.logger.info(
-      "[CatalogImageIndexer] sheet=#{@sheet.id} discovered=#{stats['discovered']} indexed=#{stats['indexed']} " \
-      "reused=#{stats['reused']} failed=#{stats['failed']}"
-    )
     stats
+  end
+
+  def index_files(stats)
+    @sheet.product_images.where(status: 'pending').find_each do |image|
+      bytes = image.file.attached? ? image.file.download.to_s.b : ''.b
+      content_type = Accounts::SafeImageFetch.image_type(bytes)
+      if content_type.blank?
+        image.update!(status: 'failed', failure_reason: 'unreadable')
+        stats['failed'] += 1
+        next
+      end
+
+      content_hash = Digest::SHA256.hexdigest(bytes)
+      cached = cached_content(content_hash)
+      cached = nil if cached&.id == image.id
+      if cached
+        image.update!(
+          status: 'completed',
+          content_hash: content_hash,
+          visual_summary: cached.visual_summary,
+          visual_attributes: cached.visual_attributes,
+          failure_reason: nil
+        )
+        stats['reused'] += 1
+        next
+      end
+
+      described = Accounts::ImageDescriber.describe(bytes, content_type)
+      if described.nil?
+        image.update!(status: 'failed', content_hash: content_hash, failure_reason: 'unreadable')
+        stats['failed'] += 1
+        next
+      end
+
+      image.update!(
+        status: 'completed',
+        content_hash: content_hash,
+        visual_summary: described[:summary],
+        visual_attributes: described.slice(:color, :label, :model).compact,
+        failure_reason: nil
+      )
+      stats['indexed'] += 1
+    end
   end
 
   def image_url?(url, header_column)

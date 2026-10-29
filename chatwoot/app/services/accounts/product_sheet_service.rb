@@ -21,8 +21,32 @@ class Accounts::ProductSheetService
       row_count: parsed[:rows].size,
       truncated: parsed[:truncated]
     )
+    store_embedded_images(sheet, parsed[:images])
     self.class.queue_image_index(sheet)
     sheet
+  end
+
+  def store_embedded_images(sheet, images)
+    Array(images).each do |image|
+      bytes = image[:bytes].to_s.b
+      next if bytes.blank?
+
+      digest = Digest::SHA256.hexdigest(bytes)
+      record = sheet.product_images.create!(
+        account_id: sheet.account_id,
+        row_index: image[:row_index].to_i,
+        source_digest: digest,
+        content_hash: digest,
+        status: 'pending'
+      )
+      io = StringIO.new(bytes)
+      io.binmode
+      record.file.attach(
+        io: io,
+        filename: "product-#{record.row_index}.#{image[:content_type].to_s.split('/').last}",
+        content_type: image[:content_type]
+      )
+    end
   end
 
   def clear(sheet_id)
@@ -95,8 +119,9 @@ class Accounts::ProductSheetService
 
   def self.queue_image_index(sheet)
     found = Accounts::CatalogImageIndexer.targets(sheet)
-    stats = { 'discovered' => found.size, 'indexed' => 0, 'reused' => 0, 'failed' => 0, 'skipped' => 0 }
-    if found.empty?
+    embedded = sheet.product_images.where(status: 'pending').count
+    stats = { 'discovered' => found.size + embedded, 'indexed' => 0, 'reused' => 0, 'failed' => 0, 'skipped' => 0 }
+    if found.empty? && embedded.zero?
       sheet.update!(image_status: 'none', image_stats: stats)
       return
     end
