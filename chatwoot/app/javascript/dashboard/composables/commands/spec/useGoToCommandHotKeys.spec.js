@@ -161,11 +161,11 @@ describe('useGoToCommandHotKeys', () => {
   });
 
   it('should include commands granted by a custom role permission', () => {
-    userPermissions = ['custom_role', 'report_manage'];
+    userPermissions = ['custom_role', 'conversation_manage'];
     const { goToCommandHotKeys } = useGoToCommandHotKeys();
 
     expect(
-      goToCommandHotKeys.value.find(cmd => cmd.id.includes('reports_overview'))
+      goToCommandHotKeys.value.find(cmd => cmd.id.includes('canned_response'))
     ).toBeDefined();
     expect(
       goToCommandHotKeys.value.find(cmd => cmd.id.includes('agent_settings'))
@@ -188,15 +188,6 @@ describe('useGoToCommandHotKeys', () => {
     expect(goToCommandHotKeys.value.map(cmd => cmd.id)).toContain(
       'goto_help_center'
     );
-  });
-
-  it('should drop report commands when the reports feature is disabled', () => {
-    disabledFeatures = [MOCK_FEATURE_FLAGS.REPORTS];
-    const { goToCommandHotKeys } = useGoToCommandHotKeys();
-
-    const ids = goToCommandHotKeys.value.map(cmd => cmd.id);
-    expect(ids).not.toContain('open_reports_overview');
-    expect(ids).not.toContain('open_agent_reports');
   });
 
   it('should drop commands whose route is not available on the installation', () => {

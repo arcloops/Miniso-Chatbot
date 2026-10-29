@@ -57,12 +57,6 @@ export const SHORTCUT_KEYS = [
     keySet: ['Alt+KeyO'],
   },
   {
-    id: 9,
-    label: 'GO_TO_REPORTS_SIDEBAR',
-    displayKeys: [KEYS.ALT, 'R'],
-    keySet: ['Alt+KeyR'],
-  },
-  {
     id: 10,
     label: 'MOVE_TO_NEXT_TAB',
     displayKeys: [KEYS.ALT, 'N'],
