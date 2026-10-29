@@ -61,10 +61,13 @@ class Accounts::ProductSheetService
     @account.product_sheets.find(sheet_id).destroy!
   end
 
-  def self.reply_text(account, query, image_note: nil, photo_attached: false)
+  def self.reply_text(account, query, image_note: nil, photo_attached: false, image_visible: nil)
     sheet = AccountProductSheet.where(account_id: account.id).newest_first.first
     return if sheet.blank? || sheet.rows.blank?
-    return visual_reply(sheet, image_note, photo_attached: photo_attached) if image_note.present?
+
+    visible = image_visible.nil? ? photo_attached : image_visible
+    return photo_catalog(sheet, attached: visible) if photo_attached && image_note.blank?
+    return visual_reply(sheet, image_note, photo_attached: photo_attached, image_visible: visible) if image_note.present?
 
     headers = Array(sheet.headers)
     matches = matching_rows(sheet.rows, query)
@@ -80,9 +83,9 @@ class Accounts::ProductSheetService
     "#{intro}\n#{lines.join("\n")}"
   end
 
-  def self.visual_reply(sheet, image_note, photo_attached: false)
+  def self.visual_reply(sheet, image_note, photo_attached: false, image_visible: false)
     if image_note == Accounts::CustomerImageNote::UNREADABLE
-      return photo_catalog(sheet) if photo_attached
+      return photo_catalog(sheet, attached: image_visible) if photo_attached
 
       return 'The customer sent a photo that could not be read. Ask them to name the product. Do not give a price or stock count.'
     end
@@ -98,7 +101,7 @@ class Accounts::ProductSheetService
     end
     scored.sort_by! { |score, _row| -score }
     if scored.empty? || scored.first.first < 2
-      return photo_catalog(sheet) if photo_attached
+      return photo_catalog(sheet, attached: image_visible) if photo_attached
       if %w[pending processing].include?(sheet.image_status)
         return 'Product pictures from the sheet are still being read. Ask the customer for the product name. Do not give a price or stock count.'
       end
@@ -117,16 +120,22 @@ class Accounts::ProductSheetService
     end
   end
 
-  def self.photo_catalog(sheet)
-    rows = Array(sheet.rows).first(100)
+  def self.photo_catalog(sheet, attached:)
+    rows = Array(sheet.rows).first(150)
     lines = rows.filter_map do |row|
       line = public_cells(row).reject(&:blank?).first(6).join(' | ')
       line.presence
     end
     intro = "Product sheet #{sheet.filename}. Columns: #{Array(sheet.headers).join(' | ')}."
-    "#{intro}\nThe customer's photo is attached. Find the product in the photo among these rows. " \
-      "Give the price and stock only from the matching row. If none of these rows is that product, ask for the product name. " \
-      "Do not say you cannot see the photo.\n#{lines.join("\n")}"
+    instruction = if attached
+                    'The customer photo is attached. Find that exact product in the rows below. ' \
+                      'Give the price and stock only from the matching row. Do not say you cannot see the photo. ' \
+                      'If none of these rows is the product in the photo, ask for the product name.'
+                  else
+                    'The customer sent a product photo. Choose only from the rows below. Do not invent a product that is not listed. ' \
+                      'If none of these rows is the item, ask for the product name.'
+                  end
+    "#{intro}\n#{instruction}\n#{lines.join("\n")}"
   end
 
   def self.unmatched_photo(sheet)

@@ -56,6 +56,9 @@ class AgentBots::ReplyService
                'The customer photo is attached to their message. Look at that photo. Do not say you cannot see it. ' \
                  'Use the photo only to choose a product sheet row. Price and stock come from that row. ' \
                  'If more than one row could be the item in the photo, ask which one and do not give a price.'
+             elsif photo_message?
+               'The customer sent a product photo. Choose the product only from the product sheet rows in this prompt. ' \
+                 'Do not invent a product that is not listed. Price and stock come from the matching row.'
              else
                'A customer photo is only a way to choose a catalog row. Price, stock, and specifications come from that row. ' \
                  'If the photo matches more than one row, or none, ask a short question and do not give a price.'
@@ -105,9 +108,21 @@ class AgentBots::ReplyService
     @customer_photo = Accounts::CustomerImageNote.prepared_for(@message)
   end
 
+  def photo_message?
+    return false if @message.blank?
+
+    @message.attachments.any? { |item| item.image? || item.file_type.to_s == 'image' }
+  end
+
   def product_sheet_text
     query = [@content, *recent_customer_lines].compact.join("\n")
-    Accounts::ProductSheetService.reply_text(account, query, image_note: @image_note, photo_attached: customer_photo.present?)
+    Accounts::ProductSheetService.reply_text(
+      account,
+      query,
+      image_note: @image_note,
+      photo_attached: customer_photo.present? || photo_message?,
+      image_visible: customer_photo.present?
+    )
   rescue StandardError => e
     Rails.logger.warn("[AgentBots::ReplyService] product sheet failed: #{e.class}: #{e.message}")
     nil

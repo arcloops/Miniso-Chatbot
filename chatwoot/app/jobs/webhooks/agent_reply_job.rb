@@ -4,8 +4,12 @@ class Webhooks::AgentReplyJob < ApplicationJob
   def perform(payload)
     message = find_message(payload)
     return if message.blank?
+
+    message.reload
+    message.attachments.reset
     return unless message.incoming? && !message.private?
     return if replied?(message)
+    return if wait_for_photo(message, payload)
 
     content = reply_content(message)
     image_note = Accounts::CustomerImageNote.recent_for(message)
@@ -43,6 +47,24 @@ class Webhooks::AgentReplyJob < ApplicationJob
   end
 
   private
+
+  def wait_for_photo(message, payload)
+    return false unless photo_pending?(message)
+    return false if payload['image_attempts'].to_i >= 2
+
+    self.class.set(wait: 5.seconds).perform_later(
+      payload.merge('id' => message.id, 'image_attempts' => payload['image_attempts'].to_i + 1)
+    )
+    true
+  end
+
+  def photo_pending?(message)
+    images = message.attachments.select { |item| item.image? || item.file_type.to_s == 'image' }
+    return true if images.blank? && message.content.blank? && message.attachments.blank?
+    return false if images.blank?
+
+    Accounts::CustomerImageNote.prepared_for(message).blank?
+  end
 
   def find_message(payload)
     return Message.find_by(id: payload['id']) if payload['id'].present?

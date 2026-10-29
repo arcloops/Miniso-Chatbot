@@ -4,8 +4,8 @@ class Accounts::SafeImageFetch
   OPEN_TIMEOUT = 4
   READ_TIMEOUT = 8
 
-  def self.fetch(url)
-    new(url).fetch
+  def self.fetch(url, max_bytes: MAX_BYTES)
+    new(url, max_bytes: max_bytes).fetch
   end
 
   def self.public_ip?(ip)
@@ -18,8 +18,9 @@ class Accounts::SafeImageFetch
     false
   end
 
-  def initialize(url)
+  def initialize(url, max_bytes: MAX_BYTES)
     @url = url.to_s.strip
+    @max_bytes = max_bytes
   end
 
   def fetch(hops = 2)
@@ -42,7 +43,7 @@ class Accounts::SafeImageFetch
     return unless response.is_a?(Net::HTTPSuccess)
 
     body = response.body.to_s.b
-    return if body.bytesize < 32 || body.bytesize > MAX_BYTES
+    return if body.bytesize < 32 || body.bytesize > @max_bytes
 
     content_type = self.class.image_type(body)
     return if content_type.blank?
