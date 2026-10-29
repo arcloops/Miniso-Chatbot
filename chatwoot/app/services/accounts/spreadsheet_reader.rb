@@ -3,8 +3,9 @@ class Accounts::SpreadsheetReader
 
   MAX_BYTES = 5 * 1024 * 1024
   MAX_ROWS = 8_000
-  MAX_COLUMNS = 10
+  MAX_COLUMNS = 16
   MAX_CELL = 80
+  MAX_URL_CELL = 1_000
 
   def self.read(filename, body)
     new(filename, body).read
@@ -166,7 +167,7 @@ class Accounts::SpreadsheetReader
 
   def normalize(table)
     cleaned = Array(table).filter_map do |row|
-      cells = Array(row).first(MAX_COLUMNS).map { |cell| cell.to_s.strip.gsub(/\s+/, ' ')[0, MAX_CELL] }
+      cells = Array(row).first(MAX_COLUMNS).map { |cell| clip_cell(cell) }
       cells if cells.any?(&:present?)
     end
     raise Error, 'The spreadsheet has no product rows.' if cleaned.size < 2
@@ -178,5 +179,11 @@ class Accounts::SpreadsheetReader
     rows = cleaned.drop(1).map { |row| row.fill('', row.size...width) }
     truncated = rows.size > MAX_ROWS
     { headers: headers, rows: rows.first(MAX_ROWS), truncated: truncated }
+  end
+
+  def clip_cell(value)
+    text = value.to_s.strip.gsub(/[ \t\f\v]+/, ' ')
+    limit = text.match?(%r{https?://}i) ? MAX_URL_CELL : MAX_CELL
+    text[0, limit]
   end
 end

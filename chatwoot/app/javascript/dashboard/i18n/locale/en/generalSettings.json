@@ -89,7 +89,7 @@
       },
       "PRODUCT_SHEET": {
         "TITLE": "Daily product sheet",
-        "NOTE": "Upload today's CSV or Excel file of products, stock, and prices. Replace it each day. Leo checks this sheet and the website when a customer asks.",
+        "NOTE": "Upload today's CSV or Excel file of products, stock, and prices. A column of image links is read once when you upload. Replace the file each day. Leo checks this sheet and the website when a customer asks.",
         "BUTTON": "Upload today's sheet",
         "REMOVE": "Remove sheet",
         "SUCCESS": "Product sheet updated. Leo will use it on the next customer message.",
@@ -101,7 +101,9 @@
         "CURRENT": "Leo uses this file",
         "VIEW": "View",
         "HIDE": "Hide",
-        "SHOWING": "Showing {shown} of {count} products"
+        "SHOWING": "Showing {shown} of {count} products",
+        "IMAGES": "{indexed} pictures ready, {reused} already known, {failed} could not be read",
+        "IMAGES_PENDING": "Reading product pictures…"
       },
       "LANGUAGE": {
         "LABEL": "Site language",

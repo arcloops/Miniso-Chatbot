@@ -4,7 +4,7 @@ class Api::V1::Accounts::ProductSheetsController < Api::V1::Accounts::BaseContro
 
   def index
     sheets = Current.account.product_sheets.newest_first.limit(60).select(
-      :id, :filename, :row_count, :truncated, :created_at
+      :id, :filename, :row_count, :truncated, :created_at, :image_status, :image_stats
     )
     current_id = sheets.first&.id
     render json: sheets.map { |sheet| sheet_summary(sheet, current_id) }
@@ -43,7 +43,9 @@ class Api::V1::Accounts::ProductSheetsController < Api::V1::Accounts::BaseContro
       row_count: sheet.row_count,
       updated_at: sheet.created_at,
       truncated: sheet.truncated,
-      current: sheet.id == current_id
+      current: sheet.id == current_id,
+      image_status: sheet.image_status,
+      image_stats: sheet.image_stats || {}
     }
   end
 end

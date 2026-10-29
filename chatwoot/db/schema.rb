@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_25_170000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_29_140000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -28,6 +28,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_25_170000) do
     t.index ["token"], name: "index_access_tokens_on_token", unique: true
   end
 
+  create_table "account_product_images", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "product_sheet_id", null: false
+    t.integer "row_index", null: false
+    t.string "source_digest", null: false
+    t.string "content_hash"
+    t.string "status", default: "completed", null: false
+    t.text "visual_summary"
+    t.jsonb "visual_attributes", default: {}, null: false
+    t.string "failure_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "content_hash"], name: "index_account_product_images_on_account_and_content"
+    t.index ["account_id", "source_digest"], name: "index_account_product_images_on_account_and_source"
+    t.index ["account_id"], name: "index_account_product_images_on_account_id"
+    t.index ["product_sheet_id", "row_index"], name: "index_account_product_images_on_sheet_and_row"
+    t.index ["product_sheet_id"], name: "index_account_product_images_on_product_sheet_id"
+  end
+
   create_table "account_product_sheets", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.string "filename", null: false
@@ -35,6 +54,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_25_170000) do
     t.jsonb "rows", default: [], null: false
     t.integer "row_count", default: 0, null: false
     t.boolean "truncated", default: false, null: false
+    t.string "image_status", default: "none", null: false
+    t.jsonb "image_stats", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "created_at"], name: "index_account_product_sheets_on_account_id_and_created_at"
@@ -1734,6 +1755,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_25_170000) do
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
   end
 
+  add_foreign_key "account_product_images", "account_product_sheets", column: "product_sheet_id", on_delete: :cascade
+  add_foreign_key "account_product_images", "accounts", on_delete: :cascade
   add_foreign_key "account_product_sheets", "accounts", on_delete: :cascade
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"

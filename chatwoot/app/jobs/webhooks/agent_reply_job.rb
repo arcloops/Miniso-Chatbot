@@ -5,6 +5,13 @@ class Webhooks::AgentReplyJob < ApplicationJob
     message = find_message(payload)
     return if message.blank?
     return unless message.incoming? && !message.private?
+    return if replied?(message)
+
+    content = reply_content(message)
+    image_note = Accounts::CustomerImageNote.recent_for(message)
+    return if content.blank? && image_note.blank?
+
+    content = 'The customer sent a product photo.' if content.blank?
 
     # Hold the message until the reply exists so a second job cannot send another one.
     message.with_lock do
@@ -12,13 +19,11 @@ class Webhooks::AgentReplyJob < ApplicationJob
 
       conversation = message.conversation
       agent_bot = agent_bot_for(conversation)
-      content = reply_content(message)
-      return if content.blank?
-
       reply = AgentBots::ReplyService.new(
         conversation: conversation,
         content: content,
-        sender_name: message.sender.try(:name)
+        sender_name: message.sender.try(:name),
+        image_note: image_note
       ).perform
       reply = 'Thanks for your message. How can we help you?' if reply.blank?
 

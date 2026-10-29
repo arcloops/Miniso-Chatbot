@@ -4,10 +4,11 @@ class AgentBots::ReplyService
   HISTORY_LIMIT = 6
   WEBSITE_SUMMARY_LIMIT = 12_000
 
-  def initialize(conversation:, content:, sender_name: nil)
+  def initialize(conversation:, content:, sender_name: nil, image_note: nil)
     @conversation = conversation
     @content = content
     @sender_name = sender_name
+    @image_note = image_note
   end
 
   def perform
@@ -50,6 +51,8 @@ class AgentBots::ReplyService
     parts << "You are the customer assistant for #{account.name}."
     parts << 'Answer from the company description, the daily product sheet, and the website text. ' \
              'For stock and prices, use the product sheet. Use the website for what the company does.'
+    parts << 'A customer photo is only a way to choose a catalog row. Price, stock, and specifications come from that row. ' \
+             'If the photo matches more than one row, or none, ask a short question and do not give a price.'
     parts << 'Do not give a generic reply when that text answers the question. If it does not contain the fact, ' \
              'say you will check and get back to them. Do not invent prices, policies, services, or stock.'
     parts << "Company description:\n#{account.bot_description}" if account.bot_description.present?
@@ -66,16 +69,23 @@ class AgentBots::ReplyService
     parts << "Company: #{account.name}" if account.present?
     transcript = recent_transcript
     parts << "Recent conversation:\n#{transcript}" if transcript.present?
+    parts << "Customer photo clues: #{@image_note}" if photo_clues.present?
     parts << "Customer message: #{@content}"
     parts.join("\n\n")
   end
 
   def product_sheet_text
     query = [@content, *recent_customer_lines].compact.join("\n")
-    Accounts::ProductSheetService.reply_text(account, query)
+    Accounts::ProductSheetService.reply_text(account, query, image_note: @image_note)
   rescue StandardError => e
     Rails.logger.warn("[AgentBots::ReplyService] product sheet failed: #{e.class}: #{e.message}")
     nil
+  end
+
+  def photo_clues
+    return if @image_note.blank? || @image_note == Accounts::CustomerImageNote::UNREADABLE
+
+    @image_note
   end
 
   def recent_customer_lines

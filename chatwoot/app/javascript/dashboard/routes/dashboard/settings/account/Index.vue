@@ -53,6 +53,8 @@ export default {
       openSheet: null,
       sheetFile: null,
       isUploadingSheet: false,
+      sheetPoll: null,
+      sheetPolls: 0,
     };
   },
   validations: {
@@ -115,6 +117,9 @@ export default {
       this.initializeAccount();
     }
   },
+  beforeUnmount() {
+    this.stopSheetPoll();
+  },
   methods: {
     async initializeAccount() {
       try {
@@ -163,9 +168,44 @@ export default {
         ) {
           this.openSheet = null;
         }
+        this.scheduleSheetPoll();
       } catch (error) {
         // The list appears after the first upload.
       }
+    },
+
+    scheduleSheetPoll() {
+      this.stopSheetPoll();
+      const pending = this.productSheets.some(
+        sheet =>
+          sheet.image_status === 'pending' || sheet.image_status === 'processing'
+      );
+      if (!pending || this.sheetPolls > 20) return;
+
+      this.sheetPolls += 1;
+      this.sheetPoll = setTimeout(async () => {
+        await this.loadProductSheets();
+      }, 5000);
+    },
+
+    stopSheetPoll() {
+      if (!this.sheetPoll) return;
+      clearTimeout(this.sheetPoll);
+      this.sheetPoll = null;
+    },
+
+    imageStatusText(sheet) {
+      if (!sheet || !sheet.image_status || sheet.image_status === 'none') return '';
+      if (sheet.image_status === 'pending' || sheet.image_status === 'processing') {
+        return this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.IMAGES_PENDING');
+      }
+      const stats = sheet.image_stats || {};
+      if (!stats.discovered) return '';
+      return this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.IMAGES', {
+        indexed: stats.indexed || 0,
+        reused: stats.reused || 0,
+        failed: stats.failed || 0,
+      });
     },
 
     async viewProductSheet(sheet) {
@@ -189,6 +229,7 @@ export default {
         await this.$store.dispatch('accounts/get');
         this.sheetFile = null;
         if (this.$refs.sheetInput) this.$refs.sheetInput.value = '';
+        this.sheetPolls = 0;
         await this.loadProductSheets();
         useAlert(this.$t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.SUCCESS'));
       } catch (error) {
@@ -410,6 +451,9 @@ export default {
                   </p>
                   <p v-if="sheet.current" class="mb-0 text-xs text-n-slate-11">
                     {{ $t('GENERAL_SETTINGS.FORM.PRODUCT_SHEET.CURRENT') }}
+                  </p>
+                  <p v-if="imageStatusText(sheet)" class="mb-0 text-xs text-n-slate-11">
+                    {{ imageStatusText(sheet) }}
                   </p>
                 </div>
                 <div class="flex gap-2">
