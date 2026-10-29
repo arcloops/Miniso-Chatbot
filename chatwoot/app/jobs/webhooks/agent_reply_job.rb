@@ -23,7 +23,8 @@ class Webhooks::AgentReplyJob < ApplicationJob
         conversation: conversation,
         content: content,
         sender_name: message.sender.try(:name),
-        image_note: image_note
+        image_note: image_note,
+        message: message
       ).perform
       reply = 'Thanks for your message. How can we help you?' if reply.blank?
 

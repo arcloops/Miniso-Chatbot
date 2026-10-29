@@ -4,11 +4,12 @@ class AgentBots::ReplyService
   HISTORY_LIMIT = 6
   WEBSITE_SUMMARY_LIMIT = 12_000
 
-  def initialize(conversation:, content:, sender_name: nil, image_note: nil)
+  def initialize(conversation:, content:, sender_name: nil, image_note: nil, message: nil)
     @conversation = conversation
     @content = content
     @sender_name = sender_name
     @image_note = image_note
+    @message = message
   end
 
   def perform
@@ -40,7 +41,7 @@ class AgentBots::ReplyService
       model: MODEL,
       max_tokens: 500,
       system: system_prompt,
-      messages: [{ role: 'user', content: user_message }]
+      messages: [{ role: 'user', content: user_content }]
     }.to_json
   end
 
@@ -51,8 +52,14 @@ class AgentBots::ReplyService
     parts << "You are the customer assistant for #{account.name}."
     parts << 'Answer from the company description, the daily product sheet, and the website text. ' \
              'For stock and prices, use the product sheet. Use the website for what the company does.'
-    parts << 'A customer photo is only a way to choose a catalog row. Price, stock, and specifications come from that row. ' \
-             'If the photo matches more than one row, or none, ask a short question and do not give a price.'
+    parts << if customer_photo.present?
+               'The customer photo is attached to their message. Look at that photo. Do not say you cannot see it. ' \
+                 'Use the photo only to choose a product sheet row. Price and stock come from that row. ' \
+                 'If more than one row could be the item in the photo, ask which one and do not give a price.'
+             else
+               'A customer photo is only a way to choose a catalog row. Price, stock, and specifications come from that row. ' \
+                 'If the photo matches more than one row, or none, ask a short question and do not give a price.'
+             end
     parts << 'Do not give a generic reply when that text answers the question. If it does not contain the fact, ' \
              'say you will check and get back to them. Do not invent prices, policies, services, or stock.'
     parts << "Company description:\n#{account.bot_description}" if account.bot_description.present?
@@ -74,9 +81,33 @@ class AgentBots::ReplyService
     parts.join("\n\n")
   end
 
+  def user_content
+    text = user_message
+    photo = customer_photo
+    return text if photo.blank?
+
+    [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: photo[:content_type],
+          data: Base64.strict_encode64(photo[:bytes])
+        }
+      },
+      { type: 'text', text: "#{text}\n\nThe product photo is attached above. Identify that product from the product sheet." }
+    ]
+  end
+
+  def customer_photo
+    return @customer_photo if defined?(@customer_photo)
+
+    @customer_photo = Accounts::CustomerImageNote.prepared_for(@message)
+  end
+
   def product_sheet_text
     query = [@content, *recent_customer_lines].compact.join("\n")
-    Accounts::ProductSheetService.reply_text(account, query, image_note: @image_note)
+    Accounts::ProductSheetService.reply_text(account, query, image_note: @image_note, photo_attached: customer_photo.present?)
   rescue StandardError => e
     Rails.logger.warn("[AgentBots::ReplyService] product sheet failed: #{e.class}: #{e.message}")
     nil

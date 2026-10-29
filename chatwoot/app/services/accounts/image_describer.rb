@@ -14,9 +14,17 @@ class Accounts::ImageDescriber
     new(bytes, content_type).describe
   end
 
+  def self.prepare(bytes, content_type)
+    new(bytes, content_type).prepare
+  end
+
   def initialize(bytes, content_type)
     @bytes = bytes
     @content_type = content_type
+  end
+
+  def prepare
+    shrink
   end
 
   def describe

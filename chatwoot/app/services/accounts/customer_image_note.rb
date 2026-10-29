@@ -56,6 +56,21 @@ class Accounts::CustomerImageNote
     [fetched[:bytes], fetched[:content_type]]
   end
 
+  def self.prepared_for(message)
+    return if message.blank?
+
+    attachment = message.attachments.detect { |item| usable_image?(item) }
+    return if attachment.blank?
+
+    bytes, content_type = bytes_for(attachment)
+    return if bytes.blank?
+
+    Accounts::ImageDescriber.prepare(bytes, content_type)
+  rescue StandardError => e
+    Rails.logger.warn("[CustomerImageNote] prepare #{e.class}")
+    nil
+  end
+
   def self.usable_image?(attachment)
     return false if attachment.blank?
     return true if attachment.image? && (attachment.file.attached? || attachment.external_url.present?)
