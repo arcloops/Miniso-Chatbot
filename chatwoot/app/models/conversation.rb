@@ -151,6 +151,9 @@ class Conversation < ApplicationRecord
     return false if inbox.blank?
 
     Conversations::MessageWindowService.new(self).can_reply?
+  rescue StandardError => e
+    Rails.logger.warn("Reply window skipped for conversation #{id}: #{e.class}")
+    false
   end
 
   def language

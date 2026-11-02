@@ -13,14 +13,15 @@ json.meta do
     end
   end
   json.channel conversation.inbox.try(:channel_type)
-  if conversation.assigned_entity.is_a?(AgentBot)
+  assignee = conversation.assigned_entity
+  if assignee.is_a?(AgentBot)
     json.assignee do
-      json.partial! 'api/v1/models/agent_bot_slim', formats: [:json], resource: conversation.assigned_entity
+      json.partial! 'api/v1/models/agent_bot_slim', formats: [:json], resource: assignee
     end
     json.assignee_type 'AgentBot'
-  elsif conversation.assignee_type == 'User'
+  elsif assignee.is_a?(User)
     json.assignee do
-      json.partial! 'api/v1/models/agent', formats: [:json], resource: conversation.assigned_entity
+      json.partial! 'api/v1/models/agent', formats: [:json], resource: assignee
     end
     json.assignee_type 'User'
   end

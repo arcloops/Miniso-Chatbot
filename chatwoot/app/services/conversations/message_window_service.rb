@@ -46,7 +46,10 @@ class Conversations::MessageWindowService
 
   # Check medium of the inbox to determine the messaging window
   def twilio_messaging_window
-    @conversation.inbox.channel.medium == 'whatsapp' ? MESSAGING_WINDOW_24_HOURS : nil
+    channel = @conversation.inbox&.channel
+    return if channel.blank?
+
+    channel.medium == 'whatsapp' ? MESSAGING_WINDOW_24_HOURS : nil
   end
 
   def messenger_messaging_window

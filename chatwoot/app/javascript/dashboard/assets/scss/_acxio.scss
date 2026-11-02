@@ -75,6 +75,7 @@ body.acxio-app {
   --text-blue: 214 236 246;
   --text-purple: 226 222 250;
   --border-blue: 93, 181, 226, 0.7;
+  --button-color: 90 78 168;
 
   color: var(--acxio-cream);
 }
@@ -121,8 +122,8 @@ body.dark .acxio-desk {
 
 body:has(.acxio-desk) {
   background:
-    radial-gradient(920px 560px at -10% -16%, rgba(var(--acxio-blue-rgb), 0.42), transparent 58%),
-    radial-gradient(860px 620px at 110% -8%, rgba(var(--acxio-purple-rgb), 0.5), transparent 54%),
+    radial-gradient(920px 560px at -10% -16%, rgba(var(--acxio-purple-rgb), 0.55), transparent 58%),
+    radial-gradient(860px 620px at 110% -8%, rgba(var(--acxio-blue-rgb), 0.36), transparent 54%),
     radial-gradient(640px 420px at 70% 115%, rgba(93, 140, 226, 0.28), transparent 52%),
     linear-gradient(165deg, #10162e 0%, #0c1022 46%, #161026 100%);
 }
@@ -282,6 +283,34 @@ body.dark .acxio-desk .bg-n-card {
   color: var(--acxio-ink) !important;
 }
 
+.acxio-desk .bg-n-button-color {
+  background-color: #6a5eb8 !important;
+  background-image: linear-gradient(180deg, #9b93e0, #6a5eb8) !important;
+  color: #f6f5f2 !important;
+  outline-color: rgba(214, 210, 246, 0.9) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 8px 18px rgba(72, 58, 140, 0.35);
+}
+
+.acxio-desk a.text-n-blue-11 {
+  color: #f4f1ff !important;
+}
+
+.acxio-desk a.text-n-blue-11::after {
+  background: linear-gradient(90deg, #7a73cb, #5db5e2) !important;
+  height: 3px !important;
+}
+
+.acxio-desk a .bg-n-blue-3 {
+  background: linear-gradient(180deg, #b7b0ef, #7a73cb) !important;
+  color: #1a1433 !important;
+}
+
+.acxio-desk a .bg-n-blue-3 span {
+  color: #1a1433 !important;
+}
+
 .acxio-desk button.bg-n-brand,
 .acxio-desk a.bg-n-brand,
 body.acxio-app button.bg-n-brand,
@@ -376,18 +405,6 @@ body.dark.acxio-app [class*='backdrop-blur-[100px]'] {
 
 .acxio-desk tbody tr:hover {
   background-color: rgba(var(--acxio-blue-rgb), 0.12);
-}
-
-.acxio-desk ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.acxio-desk ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--acxio-blue), var(--acxio-purple));
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background-clip: padding-box;
 }
 
 @media (prefers-reduced-motion: reduce) {

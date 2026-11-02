@@ -4,6 +4,8 @@ module AvailabilityStatusable
   def online_presence?
     obj_id = is_a?(Contact) ? id : user_id
     ::OnlineStatusTracker.get_presence(account_id, self.class.name, obj_id)
+  rescue StandardError
+    false
   end
 
   def availability_status
