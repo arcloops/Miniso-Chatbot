@@ -58,10 +58,10 @@ body.acxio-app {
   --violet-9: 122 115 203;
   --violet-11: 214 210 242;
 
-  --background-color: 28 18 62;
-  --surface-1: 46 32 96;
+  --background-color: 10 12 24;
+  --surface-1: 16 18 38;
   --surface-2: 62 44 122;
-  --surface-active: 78 58 148;
+  --surface-active: 42 36 78;
   --border-weak: 58 52 96;
   --border-strong: 122 115 203;
   --border-container: 93, 181, 226, 0.28;
@@ -103,10 +103,10 @@ body.dark .acxio-desk {
   --violet-9: 154 148 214;
   --violet-11: 214 210 242;
 
-  --background-color: 24 16 52;
-  --surface-1: 42 28 88;
+  --background-color: 10 10 11;
+  --surface-1: 18 18 28;
   --surface-2: 58 40 112;
-  --surface-active: 74 54 138;
+  --surface-active: 42 38 68;
   --border-weak: 58 54 86;
   --border-strong: 122 115 203;
   --solid-1: 50 34 100;
@@ -177,10 +177,10 @@ body.acxio-app h3 {
   }
 
   .acxio-desk > main {
-    border: 1px solid rgba(196, 188, 242, 0.45) !important;
+    border: 1px solid rgba(var(--acxio-blue-rgb), 0.35) !important;
     border-radius: 32px;
     background:
-      linear-gradient(165deg, #3a2870 0%, #241848 52%, #16102c 100%) !important;
+      linear-gradient(165deg, rgba(var(--acxio-blue-rgb), 0.16), rgba(var(--acxio-purple-rgb), 0.14) 42%, rgba(10, 14, 32, 0.72)) !important;
     box-shadow:
       0 1px 0 rgba(var(--acxio-blue-rgb), 0.22) inset,
       0 24px 60px rgba(4, 6, 20, 0.45);
@@ -190,7 +190,7 @@ body.acxio-app h3 {
   body.dark .acxio-desk > main {
     border-color: rgba(var(--acxio-purple-rgb), 0.4) !important;
     background:
-      linear-gradient(165deg, #342464 0%, #201440 52%, #140e28 100%) !important;
+      linear-gradient(165deg, rgba(var(--acxio-blue-rgb), 0.16), rgba(var(--acxio-purple-rgb), 0.18) 46%, rgba(10, 10, 11, 0.72)) !important;
     box-shadow:
       0 1px 0 rgba(var(--acxio-blue-rgb), 0.18) inset,
       0 24px 60px rgba(0, 0, 0, 0.4);
@@ -207,11 +207,11 @@ body.acxio-app h3 {
 }
 
 .acxio-desk .bg-n-background {
-  background-color: #1c1438 !important;
+  background-color: transparent !important;
 }
 
 .acxio-desk .bg-n-surface-1 {
-  background-color: #2a1c52 !important;
+  background-color: rgba(12, 16, 36, 0.55) !important;
 }
 
 .acxio-desk .bg-n-surface-2,
@@ -228,7 +228,7 @@ body.acxio-app h3 {
 }
 
 body.dark .acxio-desk .bg-n-surface-1 {
-  background-color: #261848 !important;
+  background-color: rgba(18, 19, 28, 0.66) !important;
 }
 
 body.dark .acxio-desk .bg-n-surface-2,
