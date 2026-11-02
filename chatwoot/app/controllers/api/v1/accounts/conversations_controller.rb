@@ -45,6 +45,16 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     end
   end
 
+  def broadcast
+    inbox = Current.account.inboxes.find(params[:inbox_id])
+    authorize inbox, :show?
+    content = params.dig(:message, :content).to_s
+    return render json: { error: 'Write a message first' }, status: :unprocessable_entity if content.blank?
+
+    sent = Inboxes::BroadcastMessageService.new(inbox: inbox, content: content, sender: Current.user).perform
+    render json: { sent: sent }
+  end
+
   def update
     @conversation.update!(permitted_update_params)
   end

@@ -6,6 +6,7 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
 import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 import { ExceptionWithMessage } from 'shared/helpers/CustomErrors';
+import ConversationApi from 'dashboard/api/conversations';
 import { debounce } from '@chatwoot/utils';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
@@ -87,7 +88,7 @@ const onContactSearch = debounce(
     isSearching.value = true;
     contacts.value = [];
     try {
-      const results = await searchContacts(query);
+      const results = await searchContacts(query, { reachableOnly: false });
       // null means the request was aborted (a newer search is in-flight),
       if (results === null) return;
       contacts.value = results;
@@ -171,6 +172,23 @@ const discardCompose = () => {
   clearFormState();
   formState.message = '';
   closeCompose();
+};
+
+const broadcastMessage = async ({ inboxId, content }) => {
+  try {
+    const { data } = await ConversationApi.broadcast(inboxId, content);
+    const count = data?.sent || 0;
+    discardCompose();
+    useAlert(
+      count
+        ? t('COMPOSE_NEW_CONVERSATION.FORM.BROADCAST_SUCCESS', { count })
+        : t('COMPOSE_NEW_CONVERSATION.FORM.BROADCAST_NONE')
+    );
+    return true;
+  } catch (error) {
+    useAlert(t('COMPOSE_NEW_CONVERSATION.FORM.ERROR_MESSAGE'));
+    return false;
+  }
 };
 
 const createConversation = async ({ payload, isFromWhatsApp }) => {
@@ -267,6 +285,8 @@ onMounted(() => resetContacts());
         :contacts-ui-flags="contactsUiFlags"
         :message-signature="messageSignature"
         :send-with-signature="sendWithSignature"
+        :inboxes="inboxesList"
+        :broadcast-message="broadcastMessage"
         @search-contacts="onContactSearch"
         @reset-contact-search="resetContacts"
         @update-selected-contact="handleSelectedContact"

@@ -89,7 +89,7 @@ const targetInboxLabel = computed(() => {
         variant="link"
         size="sm"
         :color="hasErrors ? 'ruby' : 'slate'"
-        :disabled="!selectedContact"
+        :disabled="!contactableInboxesList?.length"
         class="hover:!no-underline"
         @click="emit('toggleDropdown', !showInboxesDropdown)"
       />

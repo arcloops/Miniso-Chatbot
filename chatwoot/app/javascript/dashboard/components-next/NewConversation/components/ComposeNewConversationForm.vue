@@ -10,11 +10,13 @@ import {
   stripUnsupportedMarkdown,
 } from 'dashboard/helper/editorHelper';
 import {
+  buildAccountInboxesList,
   buildContactableInboxesList,
   prepareNewMessagePayload,
   prepareWhatsAppMessagePayload,
 } from 'dashboard/components-next/NewConversation/helpers/composeConversationHelper.js';
 
+import { useAlert } from 'dashboard/composables';
 import { useCopilotReply } from 'dashboard/composables/useCopilotReply';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
 
@@ -42,6 +44,8 @@ const props = defineProps({
   messageSignature: { type: String, default: '' },
   sendWithSignature: { type: Boolean, default: false },
   formState: { type: Object, required: true },
+  inboxes: { type: Array, default: () => [] },
+  broadcastMessage: { type: Function, default: null },
 });
 
 const emit = defineEmits([
@@ -60,6 +64,7 @@ const copilot = useCopilotReply();
 
 const showContactsDropdown = ref(false);
 const showInboxesDropdown = ref(false);
+const sendToAll = ref(false);
 const showCcEmailsDropdown = ref(false);
 const showBccEmailsDropdown = ref(false);
 
@@ -107,9 +112,13 @@ const effectiveChannelType = computed(() =>
 );
 
 const validationRules = computed(() => ({
-  selectedContact: { required },
+  selectedContact: { required: requiredIf(() => !sendToAll.value) },
   targetInbox: { required },
-  message: { required: requiredIf(!inboxTypes.value.isWhatsapp) },
+  message: {
+    required: requiredIf(
+      () => sendToAll.value || !inboxTypes.value.isWhatsapp
+    ),
+  },
   subject: { required: requiredIf(inboxTypes.value.isEmail) },
 }));
 
@@ -128,10 +137,22 @@ const validationStates = computed(() => ({
   isMessageInvalid: v$.value.message.$dirty && v$.value.message.$invalid,
 }));
 
+const sourceIdForSelectedContact = () => {
+  if (props.targetInbox?.sourceId) return props.targetInbox.sourceId;
+
+  const match = props.selectedContact?.contactInboxes?.find(
+    inbox => Number(inbox.id) === Number(props.targetInbox?.id)
+  );
+  return match?.sourceId;
+};
+
 const newMessagePayload = () => {
   const { message, subject, ccEmails, bccEmails, attachedFiles } = state;
   return prepareNewMessagePayload({
-    targetInbox: props.targetInbox,
+    targetInbox: {
+      ...props.targetInbox,
+      sourceId: sourceIdForSelectedContact(),
+    },
     selectedContact: props.selectedContact,
     message,
     subject,
@@ -147,10 +168,14 @@ const contactableInboxesList = computed(() => {
   return buildContactableInboxesList(props.selectedContact?.contactInboxes);
 });
 
+const inboxChoices = computed(() => {
+  const accountInboxes = buildAccountInboxesList(props.inboxes);
+  return accountInboxes.length ? accountInboxes : contactableInboxesList.value;
+});
+
 const showNoInboxAlert = computed(() => {
   return (
-    props.selectedContact &&
-    contactableInboxesList.value.length === 0 &&
+    inboxChoices.value.length === 0 &&
     !props.contactsUiFlags.isFetchingInboxes &&
     !props.isFetchingInboxes
   );
@@ -195,6 +220,7 @@ const searchBccEmails = value => {
 };
 
 const setSelectedContact = async ({ value, action, ...rest }) => {
+  sendToAll.value = false;
   v$.value.$reset();
   emit('updateSelectedContact', { value, action, ...rest });
   showContactsDropdown.value = false;
@@ -234,7 +260,16 @@ const removeSignatureFromMessage = () => {
   }
 };
 
+const chooseAllContacts = () => {
+  sendToAll.value = true;
+};
+
+const clearSendToAll = () => {
+  sendToAll.value = false;
+};
+
 const removeTargetInbox = value => {
+  sendToAll.value = false;
   v$.value.$reset();
   copilot.reset(false);
   removeSignatureFromMessage();
@@ -293,6 +328,23 @@ const handleSendMessage = async () => {
   const isValid = await v$.value.$validate();
   if (!isValid) return;
 
+  if (sendToAll.value) {
+    const success = await props.broadcastMessage?.({
+      inboxId: props.targetInbox.id,
+      content: state.message,
+    });
+    if (success) {
+      sendToAll.value = false;
+      clearForm();
+    }
+    return;
+  }
+
+  if (!sourceIdForSelectedContact()) {
+    useAlert(t('COMPOSE_NEW_CONVERSATION.FORM.NO_CHAT'));
+    return;
+  }
+
   try {
     const success = await emit('createConversation', {
       payload: newMessagePayload(),
@@ -335,11 +387,9 @@ const handleSendTwilioMessage = async ({ message, templateParams }) => {
 };
 
 const shouldShowMessageEditor = computed(() => {
-  return (
-    !inboxTypes.value.isWhatsapp &&
-    !showNoInboxAlert.value &&
-    !inboxTypes.value.isTwilioWhatsapp
-  );
+  const sessionInbox =
+    !inboxTypes.value.isWhatsapp && !inboxTypes.value.isTwilioWhatsapp;
+  return !showNoInboxAlert.value && (sendToAll.value || sessionInbox);
 });
 
 const isCopilotActive = computed(() => copilot.isActive?.value ?? false);
@@ -376,7 +426,11 @@ useKeyboardEvents({
         :contactable-inboxes-list="contactableInboxesList"
         :show-inboxes-dropdown="showInboxesDropdown"
         :has-errors="validationStates.isContactInvalid"
+        :send-to-all="sendToAll"
+        :inbox-selected="!!targetInbox"
         @search-contacts="handleContactSearch"
+        @send-to-all="chooseAllContacts"
+        @clear-send-to-all="clearSendToAll"
         @set-selected-contact="setSelectedContact"
         @clear-selected-contact="clearSelectedContact"
         @update-dropdown="handleDropdownUpdate"
@@ -387,7 +441,7 @@ useKeyboardEvents({
         :target-inbox="targetInbox"
         :selected-contact="selectedContact"
         :show-inboxes-dropdown="showInboxesDropdown"
-        :contactable-inboxes-list="contactableInboxesList"
+        :contactable-inboxes-list="inboxChoices"
         :has-errors="validationStates.isInboxInvalid"
         :is-fetching-inboxes="isFetchingInboxes"
         @update-inbox="removeTargetInbox"

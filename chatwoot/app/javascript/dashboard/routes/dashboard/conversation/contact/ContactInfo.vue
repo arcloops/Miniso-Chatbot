@@ -104,12 +104,78 @@ export default {
 
       const telegram = socialProfiles?.telegram || telegramUsername || '';
       const twitter = socialProfiles?.twitter || twitterScreenName || '';
+      const instagram =
+        socialProfiles?.instagram ||
+        this.additionalAttributes.social_instagram_user_name ||
+        '';
 
       return {
         ...(socialProfiles || {}),
         twitter,
         telegram,
+        instagram,
       };
+    },
+    channelFacts() {
+      const details = this.additionalAttributes;
+      const facts = [];
+      const username = details.social_instagram_user_name;
+      if (username) {
+        facts.push({
+          key: 'instagram',
+          title: this.$t('CONTACT_PANEL.INSTAGRAM'),
+          value: `@${username}`,
+        });
+      }
+      if (details.social_instagram_follower_count != null && details.social_instagram_follower_count !== '') {
+        facts.push({
+          key: 'followers',
+          title: this.$t('CONTACT_PANEL.FOLLOWERS'),
+          value: String(details.social_instagram_follower_count),
+        });
+      }
+      if (details.social_instagram_is_verified_user) {
+        facts.push({
+          key: 'verified',
+          title: this.$t('CONTACT_PANEL.INSTAGRAM'),
+          value: this.$t('CONTACT_PANEL.VERIFIED'),
+        });
+      }
+      if (details.social_instagram_is_user_follow_business) {
+        facts.push({
+          key: 'follows-you',
+          title: this.$t('CONTACT_PANEL.INSTAGRAM'),
+          value: this.$t('CONTACT_PANEL.FOLLOWS_YOU'),
+        });
+      }
+      if (details.social_instagram_is_business_follow_user) {
+        facts.push({
+          key: 'you-follow',
+          title: this.$t('CONTACT_PANEL.INSTAGRAM'),
+          value: this.$t('CONTACT_PANEL.YOU_FOLLOW'),
+        });
+      }
+      const messengerName = [
+        details.social_messenger_first_name,
+        details.social_messenger_last_name,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      if (messengerName && messengerName !== this.contact.name) {
+        facts.push({
+          key: 'messenger',
+          title: this.$t('CONTACT_PANEL.MESSENGER_NAME'),
+          value: messengerName,
+        });
+      }
+      if (details.social_messenger_locale) {
+        facts.push({
+          key: 'locale',
+          title: this.$t('CONTACT_PANEL.LANGUAGE'),
+          value: details.social_messenger_locale,
+        });
+      }
+      return facts;
     },
     whatsappUsername() {
       const username =
@@ -338,6 +404,14 @@ export default {
             :title="$t('CONTACT_PANEL.LOCATION')"
           />
           <SocialProfileLinks :profiles="socialProfiles" class="my-2" />
+          <ContactInfoRow
+            v-for="fact in channelFacts"
+            :key="fact.key"
+            :value="fact.value"
+            :title="fact.title"
+            icon="info"
+            emoji="ⓘ"
+          />
         </div>
       </div>
       <div class="flex items-center w-full mt-0.5 gap-2">

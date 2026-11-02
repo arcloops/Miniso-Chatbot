@@ -41,6 +41,7 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
       contact_attributes: @resolved_contact_params
     ).perform
     apply_resolved_name
+    Facebook::ContactProfileService.remember_on_contact(@contact_inbox.contact, @profile_result)
     schedule_name_refresh if Facebook::ContactProfileService.placeholder?(@contact_inbox.contact.name)
   end
 
@@ -167,8 +168,8 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   end
 
   def contact_params
-    result = Facebook::ContactProfileService.new(channel: @inbox.channel, sender_id: @sender_id).perform
-    process_contact_params_result(result || {})
+    @profile_result = Facebook::ContactProfileService.new(channel: @inbox.channel, sender_id: @sender_id).perform
+    process_contact_params_result(@profile_result || {})
   rescue Koala::Facebook::AuthenticationError => e
     Rails.logger.warn("Facebook profile lookup failed for inbox #{@inbox.id}: #{e.message}")
     process_contact_params_result({})

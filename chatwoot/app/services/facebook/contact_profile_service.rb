@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Facebook::ContactProfileService
-  PROFILE_FIELDS = %w[name first_name last_name profile_pic].freeze
+  PROFILE_FIELDS = %w[name first_name last_name profile_pic locale].freeze
   PLACEHOLDER_NAME = 'John Doe'
 
   pattr_initialize [:channel!, :sender_id!]
@@ -27,6 +27,21 @@ class Facebook::ContactProfileService
 
   def self.placeholder?(name)
     name.blank? || name == PLACEHOLDER_NAME
+  end
+
+  def self.remember_on_contact(contact, result)
+    return if contact.blank? || result.blank?
+
+    attrs = {}
+    first_name = result['first_name'] || result[:first_name]
+    last_name = result['last_name'] || result[:last_name]
+    locale = result['locale'] || result[:locale]
+    attrs['social_messenger_first_name'] = first_name if first_name.present?
+    attrs['social_messenger_last_name'] = last_name if last_name.present?
+    attrs['social_messenger_locale'] = locale if locale.present?
+    return if attrs.blank?
+
+    contact.update!(additional_attributes: contact.additional_attributes.merge(attrs))
   end
 
   def self.display_name(result)

@@ -19,6 +19,7 @@ class Facebook::RefreshContactNameJob < ApplicationJob
     return if Facebook::ContactProfileService.placeholder?(name)
 
     contact.update!(name: name)
+    Facebook::ContactProfileService.remember_on_contact(contact, result)
     avatar_url = result['profile_pic'] || result[:profile_pic]
     ::Avatar::AvatarFromUrlJob.perform_later(contact, avatar_url) if avatar_url.present? && !contact.avatar.attached?
   rescue Koala::Facebook::AuthenticationError => e

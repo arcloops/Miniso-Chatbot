@@ -4,12 +4,26 @@ import camelcaseKeys from 'camelcase-keys';
 import ContactAPI from 'dashboard/api/contacts';
 
 const CHANNEL_PRIORITY = {
-  'Channel::Email': 1,
-  'Channel::Whatsapp': 2,
-  'Channel::Sms': 3,
-  'Channel::TwilioSms': 4,
-  'Channel::WebWidget': 5,
-  'Channel::Api': 6,
+  'Channel::Whatsapp': 1,
+  'Channel::FacebookPage': 2,
+  'Channel::Instagram': 3,
+  'Channel::Email': 4,
+  'Channel::Sms': 5,
+  'Channel::TwilioSms': 6,
+  'Channel::WebWidget': 7,
+  'Channel::Api': 8,
+};
+
+const CHANNEL_NAMES = {
+  'Channel::FacebookPage': 'Messenger',
+  'Channel::Instagram': 'Instagram',
+  'Channel::Whatsapp': 'WhatsApp',
+  'Channel::Email': 'Email',
+  'Channel::WebWidget': 'Website',
+  'Channel::Sms': 'SMS',
+  'Channel::TwilioSms': 'SMS',
+  'Channel::Telegram': 'Telegram',
+  'Channel::Api': 'API',
 };
 
 export const generateLabelForContactableInboxesList = ({
@@ -77,6 +91,17 @@ export const buildContactableInboxesList = contactInboxes => {
   if (!contactInboxes) return [];
 
   return contactInboxes.map(transformInbox).sort(compareInboxes);
+};
+
+export const buildAccountInboxesList = inboxes => {
+  return (inboxes || [])
+    .map(inbox => {
+      const item = camelcaseKeys(inbox, { deep: true });
+      const channel = CHANNEL_NAMES[item.channelType];
+      const name = channel ? `${item.name} (${channel})` : item.name;
+      return transformInbox({ ...item, name });
+    })
+    .sort(compareInboxes);
 };
 
 export const getCapitalizedNameFromEmail = email => {

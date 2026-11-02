@@ -346,11 +346,20 @@ class Message < ApplicationRecord
     dispatch_create_events
     send_reply
     execute_message_template_hooks
+    remember_shared_contact_details
     update_contact_activity
   end
 
   def update_contact_activity
     sender.update(last_activity_at: DateTime.now) if sender.is_a?(Contact)
+  end
+
+  def remember_shared_contact_details
+    return unless incoming? && !private? && content.present? && sender.is_a?(Contact)
+
+    Contacts::RememberSharedDetailsService.new(contact: sender, text: content).perform
+  rescue StandardError => e
+    Rails.logger.warn("Shared contact details skipped for message #{id}: #{e.class}")
   end
 
   def update_waiting_since

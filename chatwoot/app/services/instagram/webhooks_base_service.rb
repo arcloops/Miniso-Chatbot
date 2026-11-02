@@ -53,18 +53,21 @@ class Instagram::WebhooksBaseService
   end
 
   def update_instagram_profile_link(user)
-    return unless user['username']
-
     instagram_attributes = build_instagram_attributes(user)
+    return if instagram_attributes.blank?
+
     @contact.update!(additional_attributes: @contact.additional_attributes.merge(instagram_attributes))
   end
 
   def build_instagram_attributes(user)
-    attributes = {
-      # TODO: Remove this once we show the social_instagram_user_name in the UI instead of the username
-      'social_profiles': { 'instagram': user['username'] },
-      'social_instagram_user_name': user['username']
-    }
+    attributes = {}
+    username = user['username'].to_s.strip.presence
+    if username
+      current = @contact.additional_attributes || {}
+      profiles = (current['social_profiles'] || {}).merge('instagram' => username)
+      attributes['social_profiles'] = profiles
+      attributes['social_instagram_user_name'] = username
+    end
 
     # Add optional attributes if present
     optional_fields = %w[

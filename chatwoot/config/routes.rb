@@ -188,6 +188,7 @@ Rails.application.routes.draw do
               get :search
               get :unread_counts, to: 'conversations/unread_counts#index'
               post :filter
+              post :broadcast
             end
             scope module: :conversations do
               resources :campaign_history, only: [:index] if ChatwootApp.enterprise?

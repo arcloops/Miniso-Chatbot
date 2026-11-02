@@ -28,6 +28,13 @@ class ConversationApi extends ApiClient {
   getUnreadCounts() {
     return axios.get(`${this.url}/unread_counts`);
   }
+
+  broadcast(inboxId, content) {
+    return axios.post(`${this.url}/broadcast`, {
+      inbox_id: inboxId,
+      message: { content },
+    });
+  }
 }
 
 export default new ConversationApi();

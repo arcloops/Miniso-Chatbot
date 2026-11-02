@@ -43,6 +43,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  sendToAll: {
+    type: Boolean,
+    default: false,
+  },
+  inboxSelected: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
@@ -50,6 +58,8 @@ const emit = defineEmits([
   'setSelectedContact',
   'clearSelectedContact',
   'updateDropdown',
+  'sendToAll',
+  'clearSendToAll',
 ]);
 
 const i18nPrefix = 'COMPOSE_NEW_CONVERSATION.FORM.CONTACT_SELECTOR';
@@ -58,16 +68,23 @@ const { t } = useI18n();
 const inputType = ref(INPUT_TYPES.EMAIL);
 
 const contactsList = computed(() => {
-  return props.contacts?.map(({ name, id, thumbnail, email, ...rest }) => ({
-    id,
-    label: email ? `${name} (${email})` : name,
-    value: id,
-    thumbnail: { name, src: thumbnail },
-    ...rest,
-    name,
-    email,
-    action: 'contact',
-  }));
+  return props.contacts?.map(
+    ({ name, id, thumbnail, email, phoneNumber, ...rest }) => ({
+      id,
+      label: email
+        ? `${name} (${email})`
+        : phoneNumber
+          ? `${name} (${phoneNumber})`
+          : name,
+      value: id,
+      thumbnail: { name, src: thumbnail },
+      ...rest,
+      name,
+      email,
+      phoneNumber,
+      action: 'contact',
+    })
+  );
 });
 
 const selectedContactLabel = computed(() => {
@@ -112,6 +129,21 @@ const handleInput = value => {
         </span>
       </div>
       <div
+        v-else-if="sendToAll"
+        class="flex items-center gap-1.5 rounded-md bg-n-alpha-2 min-h-7 min-w-0 ltr:pl-3 rtl:pr-3 ltr:pr-1 rtl:pl-1"
+      >
+        <span class="text-sm truncate text-n-slate-12">
+          {{ t(`${i18nPrefix}.ALL_CONTACTS`) }}
+        </span>
+        <Button
+          variant="ghost"
+          icon="i-lucide-x"
+          color="slate"
+          size="xs"
+          @click="emit('clearSendToAll')"
+        />
+      </div>
+      <div
         v-else-if="selectedContact"
         class="flex items-center gap-1.5 rounded-md bg-n-alpha-2 min-h-7 min-w-0"
         :class="!contactId ? 'ltr:pl-3 rtl:pr-3 ltr:pr-1 rtl:pl-1' : 'px-3'"
@@ -151,6 +183,21 @@ const handleInput = value => {
         @add="emit('setSelectedContact', $event)"
         @remove="emit('clearSelectedContact')"
       />
+      <Button
+        v-if="!selectedContact && !sendToAll && inboxSelected"
+        :label="t(`${i18nPrefix}.ALL_CONTACTS`)"
+        variant="link"
+        size="sm"
+        color="slate"
+        class="flex-shrink-0 hover:!no-underline"
+        @click="emit('sendToAll')"
+      />
     </div>
+    <p
+      v-if="sendToAll"
+      class="mt-1 mb-0 text-xs text-n-slate-11 ltr:pl-8 rtl:pr-8"
+    >
+      {{ t(`${i18nPrefix}.ALL_CONTACTS_HINT`) }}
+    </p>
   </div>
 </template>

@@ -4,6 +4,13 @@
     "EMAIL_ADDRESS": "Email Address",
     "PHONE_NUMBER": "Phone number",
     "WHATSAPP_USERNAME": "WhatsApp username",
+    "INSTAGRAM": "Instagram",
+    "FOLLOWERS": "Followers",
+    "VERIFIED": "Verified",
+    "FOLLOWS_YOU": "Follows you",
+    "YOU_FOLLOW": "You follow them",
+    "MESSENGER_NAME": "Messenger name",
+    "LANGUAGE": "Language",
     "IDENTIFIER": "Identifier",
     "COPY_SUCCESSFUL": "Copied to clipboard successfully",
     "COMPANY": "Company",
@@ -629,13 +636,18 @@
       "NO_INBOX_ALERT": "There are no available inboxes to start a conversation with this contact.",
       "CONTACT_SELECTOR": {
         "LABEL": "To:",
-        "TAG_INPUT_PLACEHOLDER": "Enter at least 2 characters to search by name, email, or phone number",
-        "CONTACT_CREATING": "Creating contact..."
+        "TAG_INPUT_PLACEHOLDER": "Search by name, email, or phone number",
+        "CONTACT_CREATING": "Creating contact...",
+        "ALL_CONTACTS": "All contacts",
+        "ALL_CONTACTS_HINT": "People on this inbox who can still receive a reply."
       },
       "INBOX_SELECTOR": {
         "LABEL": "Via:",
-        "BUTTON": "Show inboxes"
+        "BUTTON": "Choose inbox"
       },
+      "BROADCAST_SUCCESS": "Sent to {count} contacts.",
+      "BROADCAST_NONE": "Nobody on this inbox can be reached right now.",
+      "NO_CHAT": "This contact has no chat on that inbox yet.",
       "EMAIL_OPTIONS": {
         "SUBJECT_LABEL": "Subject :",
         "SUBJECT_PLACEHOLDER": "Enter your email subject here",
