@@ -125,6 +125,12 @@ export default {
       this.showShortcutModal = false;
     },
   },
+  mounted() {
+    document.body.classList.add('acxio-app');
+  },
+  beforeUnmount() {
+    document.body.classList.remove('acxio-app');
+  },
 };
 </script>
 
