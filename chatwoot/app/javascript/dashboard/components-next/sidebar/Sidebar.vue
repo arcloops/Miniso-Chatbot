@@ -328,6 +328,13 @@ const closeMobileSidebar = () => {
 const menuItems = computed(() => {
   return [
     {
+      name: 'Overview',
+      label: t('SIDEBAR.OVERVIEW'),
+      icon: 'i-lucide-layout-dashboard',
+      to: accountScopedRoute('overview'),
+      activeOn: ['overview'],
+    },
+    {
       name: 'Inbox',
       label: t('SIDEBAR.INBOX'),
       icon: 'i-lucide-inbox',

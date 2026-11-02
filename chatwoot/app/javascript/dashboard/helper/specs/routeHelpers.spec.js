@@ -22,9 +22,9 @@ describe('#defaultRedirectPage', () => {
     name: 'home',
   };
 
-  it('should return dashboard route for users with conversation permissions', () => {
+  it('should return the overview route for users with conversation permissions', () => {
     const permissions = ['conversation_manage', 'agent'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/overview');
   });
 
   it('should return contacts route for users with contact permissions', () => {
@@ -49,9 +49,9 @@ describe('#defaultRedirectPage', () => {
     expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
   });
 
-  it('should return dashboard route for users with administrator role', () => {
+  it('should return the overview route for users with administrator role', () => {
     const permissions = ['administrator'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/overview');
   });
 
   it('should return dashboard route for users with multiple permissions', () => {
@@ -62,7 +62,7 @@ describe('#defaultRedirectPage', () => {
       'agent',
       'administrator',
     ];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/overview');
   });
 });
 

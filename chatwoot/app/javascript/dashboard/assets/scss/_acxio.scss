@@ -16,18 +16,18 @@ body.acxio-app {
 }
 
 .acxio-desk {
-  --slate-1: 244 246 252;
-  --slate-2: 236 239 248;
-  --slate-3: 226 230 244;
-  --slate-4: 214 220 238;
-  --slate-5: 196 204 226;
-  --slate-6: 168 176 204;
-  --slate-7: 132 140 172;
-  --slate-8: 98 104 136;
-  --slate-9: 92 93 120;
-  --slate-10: 74 72 104;
-  --slate-11: 48 46 78;
-  --slate-12: 10 10 11;
+  --slate-1: 10 12 24;
+  --slate-2: 16 18 36;
+  --slate-3: 24 26 48;
+  --slate-4: 34 32 62;
+  --slate-5: 48 44 82;
+  --slate-6: 72 68 112;
+  --slate-7: 104 100 146;
+  --slate-8: 140 136 176;
+  --slate-9: 168 164 198;
+  --slate-10: 196 192 220;
+  --slate-11: 220 216 236;
+  --slate-12: 246 245 242;
 
   --blue-1: 244 250 254;
   --blue-2: 228 244 252;
@@ -39,8 +39,8 @@ body.acxio-app {
   --blue-8: 93 181 226;
   --blue-9: 93 181 226;
   --blue-10: 70 164 214;
-  --blue-11: 24 104 140;
-  --blue-12: 12 46 66;
+  --blue-11: 186 224 244;
+  --blue-12: 236 248 252;
 
   --iris-1: 246 245 252;
   --iris-2: 238 236 250;
@@ -52,31 +52,31 @@ body.acxio-app {
   --iris-8: 138 132 208;
   --iris-9: 122 115 203;
   --iris-10: 108 101 190;
-  --iris-11: 86 78 168;
-  --iris-12: 42 36 92;
+  --iris-11: 214 210 242;
+  --iris-12: 236 234 250;
   --violet-8: 154 148 214;
   --violet-9: 122 115 203;
-  --violet-11: 86 78 168;
+  --violet-11: 214 210 242;
 
-  --background-color: 232 228 246;
-  --surface-1: 246 245 250;
-  --surface-2: 255 255 255;
-  --surface-active: 228 236 250;
-  --border-weak: 186 196 226;
-  --border-strong: 154 148 214;
-  --border-container: 122, 115, 203, 0.35;
-  --solid-1: 255 255 255;
-  --solid-2: 244 246 252;
-  --solid-3: 232 236 248;
-  --solid-blue: 210 236 248;
-  --solid-iris: 230 227 248;
-  --solid-purple: 230 227 248;
-  --card-color: 255 255 255;
-  --text-blue: 12 46 66;
-  --text-purple: 42 36 92;
+  --background-color: 10 12 24;
+  --surface-1: 16 18 38;
+  --surface-2: 22 20 46;
+  --surface-active: 42 36 78;
+  --border-weak: 58 52 96;
+  --border-strong: 122 115 203;
+  --border-container: 93, 181, 226, 0.28;
+  --solid-1: 18 20 40;
+  --solid-2: 28 26 54;
+  --solid-3: 40 36 72;
+  --solid-blue: 18 48 72;
+  --solid-iris: 42 34 78;
+  --solid-purple: 42 34 78;
+  --card-color: 20 22 44;
+  --text-blue: 214 236 246;
+  --text-purple: 226 222 250;
   --border-blue: 93, 181, 226, 0.7;
 
-  color: var(--acxio-ink);
+  color: var(--acxio-cream);
 }
 
 body.dark .acxio-desk {
@@ -121,10 +121,10 @@ body.dark .acxio-desk {
 
 body:has(.acxio-desk) {
   background:
-    radial-gradient(880px 520px at -8% -12%, rgba(var(--acxio-blue-rgb), 0.72), transparent 58%),
-    radial-gradient(820px 560px at 108% -6%, rgba(var(--acxio-purple-rgb), 0.66), transparent 56%),
-    radial-gradient(640px 420px at 78% 112%, rgba(var(--acxio-blue-rgb), 0.38), transparent 54%),
-    linear-gradient(145deg, #c9e8f6 0%, #ddd8f4 46%, #f6f5f2 100%);
+    radial-gradient(920px 560px at -10% -16%, rgba(var(--acxio-blue-rgb), 0.42), transparent 58%),
+    radial-gradient(860px 620px at 110% -8%, rgba(var(--acxio-purple-rgb), 0.5), transparent 54%),
+    radial-gradient(640px 420px at 70% 115%, rgba(93, 140, 226, 0.28), transparent 52%),
+    linear-gradient(165deg, #10162e 0%, #0c1022 46%, #161026 100%);
 }
 
 body.dark:has(.acxio-desk) {
@@ -176,13 +176,13 @@ body.acxio-app h3 {
   }
 
   .acxio-desk > main {
-    border: 1px solid rgba(var(--acxio-blue-rgb), 0.48) !important;
+    border: 1px solid rgba(var(--acxio-blue-rgb), 0.35) !important;
     border-radius: 32px;
     background:
-      linear-gradient(165deg, rgba(var(--acxio-blue-rgb), 0.22), rgba(var(--acxio-purple-rgb), 0.16) 42%, rgba(246, 245, 242, 0.62)) !important;
+      linear-gradient(165deg, rgba(var(--acxio-blue-rgb), 0.16), rgba(var(--acxio-purple-rgb), 0.14) 42%, rgba(10, 14, 32, 0.72)) !important;
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.62) inset,
-      0 24px 60px rgba(42, 36, 92, 0.16);
+      0 1px 0 rgba(var(--acxio-blue-rgb), 0.22) inset,
+      0 24px 60px rgba(4, 6, 20, 0.45);
     backdrop-filter: blur(28px) saturate(1.5);
   }
 
@@ -210,7 +210,7 @@ body.acxio-app h3 {
 }
 
 .acxio-desk .bg-n-surface-1 {
-  background-color: rgba(246, 245, 250, 0.62) !important;
+  background-color: rgba(12, 16, 36, 0.55) !important;
 }
 
 .acxio-desk .bg-n-surface-2,
@@ -218,12 +218,12 @@ body.acxio-app h3 {
 .acxio-desk .bg-n-solid-2,
 .acxio-desk .bg-n-card {
   background:
-    linear-gradient(180deg, rgba(var(--acxio-blue-rgb), 0.14), rgba(var(--acxio-purple-rgb), 0.12)),
-    rgba(255, 255, 255, 0.72) !important;
-  border-color: rgba(var(--acxio-purple-rgb), 0.28);
+    linear-gradient(180deg, rgba(var(--acxio-blue-rgb), 0.14), rgba(var(--acxio-purple-rgb), 0.16)),
+    rgba(12, 16, 36, 0.72) !important;
+  border-color: rgba(var(--acxio-purple-rgb), 0.32);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.72) inset,
-    0 12px 32px rgba(42, 36, 92, 0.08);
+    0 1px 0 rgba(var(--acxio-blue-rgb), 0.2) inset,
+    0 16px 36px rgba(4, 6, 20, 0.32);
 }
 
 body.dark .acxio-desk .bg-n-surface-1 {
@@ -264,9 +264,10 @@ body.dark .acxio-desk .bg-n-card {
 }
 
 .acxio-desk .left-bubble.bg-n-slate-4 {
-  background: rgba(255, 255, 255, 0.82) !important;
-  border: 1px solid rgba(var(--acxio-purple-rgb), 0.22);
-  box-shadow: 0 10px 28px rgba(42, 36, 92, 0.08);
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(var(--acxio-purple-rgb), 0.35);
+  color: var(--acxio-cream) !important;
+  box-shadow: 0 10px 28px rgba(4, 6, 20, 0.28);
 }
 
 .acxio-desk .right-bubble.bg-n-solid-blue {
@@ -307,9 +308,10 @@ body.acxio-app a.bg-n-brand:hover {
 body.acxio-app .modal-container input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
 body.acxio-app .modal-container textarea {
   border-radius: 14px;
-  background-color: rgba(255, 255, 255, 0.7);
-  border-color: rgba(var(--acxio-purple-rgb), 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background-color: rgba(10, 14, 32, 0.55);
+  color: var(--acxio-cream);
+  border-color: rgba(var(--acxio-purple-rgb), 0.35);
+  box-shadow: inset 0 1px 0 rgba(var(--acxio-blue-rgb), 0.16);
 }
 
 .acxio-desk input:focus,
@@ -331,8 +333,8 @@ body.acxio-app [class*='backdrop-blur-[100px]'] {
   border: 1px solid rgba(var(--acxio-blue-rgb), 0.4);
   border-radius: 24px;
   background:
-    linear-gradient(160deg, rgba(var(--acxio-blue-rgb), 0.18), rgba(var(--acxio-purple-rgb), 0.16)),
-    rgba(246, 245, 242, 0.88);
+    linear-gradient(160deg, rgba(var(--acxio-blue-rgb), 0.2), rgba(var(--acxio-purple-rgb), 0.22)),
+    rgba(12, 14, 30, 0.9);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
     0 24px 60px rgba(42, 36, 92, 0.18);
@@ -353,8 +355,17 @@ body.dark.acxio-app [class*='backdrop-blur-[100px]'] {
   border-spacing: 0;
 }
 
+.acxio-desk aside [class*='i-lucide'] {
+  color: #c8c4dc;
+}
+
+.acxio-desk aside .bg-n-alpha-2.font-medium [class*='i-lucide'] {
+  color: #0a0a0b;
+  filter: drop-shadow(0 0 6px rgba(93, 181, 226, 0.45));
+}
+
 .acxio-desk thead th {
-  color: #5c4e92;
+  color: #c8c4dc;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
