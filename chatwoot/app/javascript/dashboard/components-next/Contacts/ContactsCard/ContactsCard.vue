@@ -10,6 +10,11 @@ import Flag from 'dashboard/components-next/flag/Flag.vue';
 import ContactDeleteSection from 'dashboard/components-next/Contacts/ContactsCard/ContactDeleteSection.vue';
 import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
 import countries from 'shared/constants/countries';
+import {
+  INBOX_TYPES,
+  getInboxIconByType,
+} from 'dashboard/helper/inbox';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 const props = defineProps({
   id: { type: Number, required: true },
@@ -18,6 +23,7 @@ const props = defineProps({
   companyId: { type: [Number, String], default: '' },
   additionalAttributes: { type: Object, default: () => ({}) },
   phoneNumber: { type: String, default: '' },
+  contactInboxes: { type: Array, default: () => [] },
   thumbnail: { type: String, default: '' },
   availabilityStatus: { type: String, default: null },
   isExpanded: { type: Boolean, default: false },
@@ -89,6 +95,35 @@ const formattedLocation = computed(() => {
     .join(' ');
 });
 
+const CHANNEL_LABELS = {
+  [INBOX_TYPES.FB]: 'Messenger',
+  [INBOX_TYPES.INSTAGRAM]: 'Instagram',
+  [INBOX_TYPES.WHATSAPP]: 'WhatsApp',
+  [INBOX_TYPES.WEB]: 'Website',
+  [INBOX_TYPES.EMAIL]: 'Email',
+  [INBOX_TYPES.SMS]: 'SMS',
+  [INBOX_TYPES.TWILIO]: 'SMS',
+  [INBOX_TYPES.TELEGRAM]: 'Telegram',
+  [INBOX_TYPES.API]: 'API',
+};
+
+const inboxTags = computed(() =>
+  (props.contactInboxes || [])
+    .map(item => {
+      const inbox = item.inbox || {};
+      const channelType = inbox.channelType;
+      const channel = CHANNEL_LABELS[channelType];
+      if (!channel && !inbox.name) return null;
+
+      return {
+        key: inbox.id || channel || inbox.name,
+        label: channel || inbox.name,
+        icon: getInboxIconByType(channelType, inbox.medium, 'line'),
+      };
+    })
+    .filter(Boolean)
+);
+
 const handleFormUpdate = updatedData => {
   Object.assign(contactData.value, updatedData);
 };
@@ -153,6 +188,14 @@ const handleAvatarHover = isHovered => {
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span class="text-base font-medium truncate text-n-slate-12">
               {{ name }}
+            </span>
+            <span
+              v-for="tag in inboxTags"
+              :key="tag.key"
+              class="inline-flex items-center gap-1 text-xs font-medium text-n-slate-11"
+            >
+              <Icon :icon="tag.icon" class="size-3.5" />
+              {{ tag.label }}
             </span>
             <span class="inline-flex items-center gap-1">
               <span

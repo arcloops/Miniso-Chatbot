@@ -155,6 +155,16 @@ class Message < ApplicationRecord
     data[:echo_id] = echo_id if echo_id.present?
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
     merge_sender_attributes(data)
+  rescue StandardError => e
+    Rails.logger.warn("Message #{id} could not be listed: #{e.class}")
+    {
+      id: id,
+      content: content.to_s,
+      message_type: message_type_before_type_cast,
+      conversation_id: conversation&.display_id,
+      created_at: created_at.to_i,
+      attachments: []
+    }
   end
 
   def conversation_push_event_data

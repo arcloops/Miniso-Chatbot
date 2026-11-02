@@ -45,7 +45,9 @@ class DataImport::ContactManager
   end
 
   def format_phone_number(phone_number)
-    phone_number.start_with?('+') ? phone_number : "+#{phone_number}"
+    normalized = phone_number.to_s.strip.gsub(/[^\d+]/, '')
+    normalized = "+#{normalized.delete_prefix('00')}" if normalized.start_with?('00')
+    normalized.start_with?('+') ? normalized : "+#{normalized}"
   end
 
   def update_contact_with_merged_attributes(params, contact)

@@ -47,12 +47,14 @@ class DataImportJob < ApplicationJob
   def build_contact_from_row(row, contacts, rejected_contacts)
     row_hash = row.to_h.with_indifferent_access
     labels = extract_labels(row_hash)
-    invalid_labels = labels.map(&:downcase) - approved_labels
+    invalid_labels = labels.reject { |label| label.downcase.match?(RegexHelper::UNICODE_CHARACTER_NUMBER_HYPHEN_UNDERSCORE) }
 
     if invalid_labels.present?
       append_label_error(row, invalid_labels, rejected_contacts)
       return
     end
+
+    ensure_labels(labels)
 
     current_contact = @contact_manager.build_contact(row_hash.except(:labels))
     if current_contact.valid?
@@ -145,8 +147,17 @@ class DataImportJob < ApplicationJob
     @approved_labels ||= @data_import.account.labels.pluck(:title)
   end
 
+  def ensure_labels(labels)
+    labels.map(&:downcase).uniq.each do |title|
+      next if approved_labels.include?(title)
+
+      @data_import.account.labels.create!(title: title) unless @data_import.account.labels.exists?(title: title)
+      approved_labels << title
+    end
+  end
+
   def append_label_error(row, labels, rejected_contacts)
-    row['errors'] = "Unknown labels: #{labels.join(', ')}"
+    row['errors'] = "Labels must be one word of letters, numbers, hyphens, or underscores: #{labels.join(', ')}"
     rejected_contacts << row
   end
 

@@ -6,6 +6,7 @@ import SMSCampaignsPage from './pages/SMSCampaignsPage.vue';
 import WhatsAppCampaignsPage from './pages/WhatsAppCampaignsPage.vue';
 import WhatsAppCampaignFormPage from './pages/WhatsAppCampaignFormPage.vue';
 import WhatsAppCampaignAnalyticsPage from './pages/WhatsAppCampaignAnalyticsPage.vue';
+import SocialCampaignsPage from './pages/SocialCampaignsPage.vue';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const meta = {
@@ -76,6 +77,12 @@ const campaignsRoutes = {
           name: 'campaigns_whatsapp_edit',
           meta,
           component: WhatsAppCampaignFormPage,
+        },
+        {
+          path: 'social',
+          name: 'campaigns_social_index',
+          meta,
+          component: SocialCampaignsPage,
         },
       ],
     },

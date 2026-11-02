@@ -140,6 +140,18 @@ RSpec.describe Contact do
         expect(resolved).to include(contact_with_email, contact_with_phone, contact_with_identifier)
         expect(resolved).not_to include(contact_without_details)
       end
+
+      it 'includes people from an inbox even when they have no email, phone, or identifier' do
+        inbox = create(:inbox, account: account)
+        inbox_contact = create(:contact, account: account, name: 'Instagram Person', email: nil, phone_number: nil, identifier: nil)
+        create(:contact_inbox, contact: inbox_contact, inbox: inbox)
+        stranger = create(:contact, account: account, name: 'No Inbox', email: nil, phone_number: nil, identifier: nil)
+
+        resolved = account.contacts.resolved_contacts(use_crm_v2: false)
+
+        expect(resolved).to include(inbox_contact)
+        expect(resolved).not_to include(stranger)
+      end
     end
 
     context 'when crm_v2 feature flag is enabled' do

@@ -271,7 +271,7 @@ RSpec.describe DataImportJob do
         expect(ActsAsTaggableOn::Tagging.where(tag_id: lead.id, taggable: contact, context: 'labels').count).to eq(1)
       end
 
-      it 'rejects rows with labels that do not exist in the account before updating contacts' do
+      it 'creates labels from the file and applies them' do
         existing_contact = create(:contact,
                                   account: labels_data_import.account,
                                   email: 'existing@example.com',
@@ -287,10 +287,10 @@ RSpec.describe DataImportJob do
 
         described_class.perform_now(unknown_label_import)
 
-        expect(existing_contact.reload.name).to eq('Existing Name')
-        expect(existing_contact.phone_number).to eq('+918080808085')
-        expect(unknown_label_import.reload.failed_records).to be_attached
-        expect(unknown_label_import.failed_records.download).to include('Unknown labels: unknown_label')
+        expect(existing_contact.reload.name).to eq('Updated Name')
+        expect(existing_contact.phone_number).to eq('+918080808086')
+        expect(existing_contact.label_list).to include('vip', 'unknown_label')
+        expect(labels_data_import.account.labels.pluck(:title)).to include('unknown_label')
       end
     end
   end

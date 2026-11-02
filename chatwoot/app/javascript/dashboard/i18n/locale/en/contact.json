@@ -322,9 +322,9 @@
         "UNBLOCK_SUCCESS_MESSAGE": "This contact is unblocked successfully",
         "UNBLOCK_ERROR_MESSAGE": "Unable to unblock contact. Please try again later.",
         "IMPORT_CONTACT": {
-          "TITLE": "Import contacts",
-          "DESCRIPTION": "Import contacts through a CSV file.",
-          "DOWNLOAD_LABEL": "Download a sample csv.",
+          "TITLE": "Upload contacts",
+          "DESCRIPTION": "Use a CSV with name, phone_number, email, and labels. Put the country code on the phone, for example +8801.... Separate labels with commas. A new label is created when the file uses one. WhatsApp campaigns can message these contacts. Messenger and Instagram still only reach people who already wrote to that inbox.",
+          "DOWNLOAD_LABEL": "Download a sample CSV.",
           "LABEL": "CSV File:",
           "CHOOSE_FILE": "Choose file",
           "CHANGE": "Change",

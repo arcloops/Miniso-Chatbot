@@ -61,19 +61,31 @@ RSpec.describe Campaign do
     end
   end
 
-  context 'when Inbox other then Website or Twilio SMS' do
+  context 'when the inbox cannot run a campaign' do
+    let(:account) { create(:account) }
+    let(:email_channel) { create(:channel_email, account: account) }
+    let(:email_inbox) { create(:inbox, channel: email_channel, account: account) }
+    let(:campaign) { build(:campaign, inbox: email_inbox, account: account) }
+
+    it 'would not save the campaigns' do
+      expect(campaign.save).to be false
+      expect(campaign.errors.full_messages.first).to eq 'Inbox Unsupported Inbox type'
+    end
+  end
+
+  context 'when the inbox is Messenger' do
     before do
       stub_request(:post, /graph.facebook.com/)
     end
 
     let(:account) { create(:account) }
-    let!(:facebook_channel) { create(:channel_facebook_page, account: account) }
-    let!(:facebook_inbox) { create(:inbox, channel: facebook_channel, account: account) }
+    let(:facebook_channel) { create(:channel_facebook_page, account: account) }
+    let(:facebook_inbox) { create(:inbox, channel: facebook_channel, account: account) }
     let(:campaign) { build(:campaign, inbox: facebook_inbox, account: account) }
 
-    it 'would not save the campaigns' do
-      expect(campaign.save).to be false
-      expect(campaign.errors.full_messages.first).to eq 'Inbox Unsupported Inbox type'
+    it 'saves as a one off campaign' do
+      expect(campaign.save).to be true
+      expect(campaign).to be_one_off
     end
   end
 

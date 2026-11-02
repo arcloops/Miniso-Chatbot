@@ -118,6 +118,13 @@ export const getters = {
       item => item.channel_type === INBOX_TYPES.WHATSAPP
     );
   },
+  getSocialInboxes($state) {
+    return $state.records.filter(
+      item =>
+        item.channel_type === INBOX_TYPES.FB ||
+        item.channel_type === INBOX_TYPES.INSTAGRAM
+    );
+  },
   dialogFlowEnabledInboxes($state) {
     return $state.records.filter(
       item => item.channel_type !== INBOX_TYPES.EMAIL

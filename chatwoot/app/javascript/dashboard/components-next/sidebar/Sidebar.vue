@@ -552,6 +552,11 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.WHATSAPP'),
           to: accountScopedRoute('campaigns_whatsapp_index'),
         },
+        {
+          name: 'Messenger and Instagram',
+          label: t('SIDEBAR.SOCIAL'),
+          to: accountScopedRoute('campaigns_social_index'),
+        },
       ],
     },
     {

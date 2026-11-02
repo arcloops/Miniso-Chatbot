@@ -13,8 +13,10 @@ module Avatarable
   end
 
   def avatar_url
-    return url_for(avatar) if avatar.attached?
+    return '' unless avatar.attached?
 
+    url_for(avatar)
+  rescue StandardError
     ''
   end
 

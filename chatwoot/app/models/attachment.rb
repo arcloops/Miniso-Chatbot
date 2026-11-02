@@ -120,18 +120,23 @@ class Attachment < ApplicationRecord
   end
 
   def file_metadata
+    blob = file.blob
+    image_meta = blob&.metadata || {}
     metadata = {
       extension: extension,
-      content_type: file.content_type,
+      content_type: blob&.content_type,
       data_url: file_url,
       thumb_url: thumb_url,
-      file_size: file.byte_size,
-      width: file.metadata[:width],
-      height: file.metadata[:height]
+      file_size: blob&.byte_size,
+      width: image_meta[:width] || image_meta['width'],
+      height: image_meta[:height] || image_meta['height']
     }
 
     metadata[:data_url] = metadata[:thumb_url] = external_url if instagram_incoming_message?
     metadata
+  rescue StandardError => e
+    Rails.logger.warn("Attachment #{id} metadata failed: #{e.class}")
+    { data_url: external_url.to_s, thumb_url: '' }
   end
 
   def location_metadata

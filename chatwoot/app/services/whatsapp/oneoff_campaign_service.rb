@@ -57,18 +57,14 @@ class Whatsapp::OneoffCampaignService
     recipient, recipient_error = campaign_destination(contact)
     if recipient.blank?
       Rails.logger.warn "Skipping campaign recipient contact_id=#{contact.id}: #{recipient_error}"
-      return
-    end
-
-    if campaign.template_params.blank?
+    elsif campaign.template_params.blank?
       Rails.logger.error "Skipping contact #{contact.name} - no template_params found for WhatsApp campaign"
-      return
+    else
+      processed_template_params = process_liquid_template_params(contact)
+      send_whatsapp_template_message(to: recipient, template_params: processed_template_params) if processed_template_params.present?
     end
 
-    processed_template_params = process_liquid_template_params(contact)
-    return if processed_template_params.nil?
-
-    send_whatsapp_template_message(to: recipient, template_params: processed_template_params)
+    Meta::OneoffCampaignService.new(campaign: campaign).deliver_social_channels(contact)
   end
 
   def audience_contacts

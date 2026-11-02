@@ -35,7 +35,7 @@ describe('#ContactsAPI', () => {
       contactAPI.get(1, 'name', 'customer-support');
       expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/contacts', {
         params: {
-          include_contact_inboxes: false,
+          include_contact_inboxes: true,
           page: 1,
           sort: 'name',
           labels: ['customer-support'],
@@ -75,7 +75,7 @@ describe('#ContactsAPI', () => {
       contactAPI.search('leads', 1, 'date', 'customer-support');
       expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/contacts/search', {
         params: {
-          include_contact_inboxes: false,
+          include_contact_inboxes: true,
           page: 1,
           sort: 'date',
           q: 'leads',
@@ -92,7 +92,7 @@ describe('#ContactsAPI', () => {
       });
       expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/contacts/search', {
         params: {
-          include_contact_inboxes: false,
+          include_contact_inboxes: true,
           page: 1,
           sort: 'date',
           q: 'leads',
@@ -106,7 +106,7 @@ describe('#ContactsAPI', () => {
       contactAPI.search('jane+shop@gmail.com');
       expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/contacts/search', {
         params: {
-          include_contact_inboxes: false,
+          include_contact_inboxes: true,
           page: 1,
           sort: 'name',
           q: 'jane+shop@gmail.com',
@@ -153,7 +153,7 @@ describe('#ContactsAPI', () => {
         '/api/v1/contacts/filter',
         queryPayload,
         {
-          params: { include_contact_inboxes: false, page: 1, sort: 'name' },
+          params: { include_contact_inboxes: true, page: 1, sort: 'name' },
         }
       );
     });
@@ -170,12 +170,12 @@ describe('#ContactsAPI', () => {
 describe('#buildContactParams', () => {
   it('returns correct params', () => {
     expect(buildContactParams(1, 'name', '', '')).toEqual({
-      include_contact_inboxes: false,
+      include_contact_inboxes: true,
       page: 1,
       sort: 'name',
     });
     expect(buildContactParams(1, 'name', 'customer-support', '')).toEqual({
-      include_contact_inboxes: false,
+      include_contact_inboxes: true,
       page: 1,
       sort: 'name',
       labels: ['customer-support'],
@@ -183,7 +183,7 @@ describe('#buildContactParams', () => {
     expect(
       buildContactParams(1, 'name', 'customer-support', 'message-content')
     ).toEqual({
-      include_contact_inboxes: false,
+      include_contact_inboxes: true,
       page: 1,
       sort: 'name',
       q: 'message-content',

@@ -1,10 +1,13 @@
 <script setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import ContactSortMenu from './components/ContactSortMenu.vue';
 import ContactMoreActions from './components/ContactMoreActions.vue';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
+import { usePolicy } from 'dashboard/composables/usePolicy';
 
 defineProps({
   showSearch: { type: Boolean, default: true },
@@ -18,6 +21,12 @@ defineProps({
   isLabelView: { type: Boolean, default: false },
   isActiveView: { type: Boolean, default: false },
 });
+
+const { t } = useI18n();
+const { checkPermissions } = usePolicy();
+const canImportContacts = computed(() =>
+  checkPermissions(['administrator', 'contact_manage'])
+);
 
 const emit = defineEmits([
   'search',
@@ -105,6 +114,15 @@ const emit = defineEmits([
               :active-sort="activeSort"
               :active-ordering="activeOrdering"
               @update:sort="emit('update:sort', $event)"
+            />
+            <Button
+              v-if="canImportContacts"
+              :label="t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.TITLE')"
+              icon="i-lucide-upload"
+              color="slate"
+              size="sm"
+              variant="faded"
+              @click="emit('import')"
             />
             <ContactMoreActions
               @add="emit('add')"

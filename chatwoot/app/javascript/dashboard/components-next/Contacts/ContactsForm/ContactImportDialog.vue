@@ -62,7 +62,7 @@ defineExpose({ dialogRef });
       t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.IMPORT')
     "
     :is-loading="isImportingContact"
-    :disable-confirm-button="isImportingContact"
+    :disable-confirm-button="isImportingContact || !hasSelectedFile"
     @confirm="uploadFile"
   >
     <template #description>
@@ -126,7 +126,7 @@ defineExpose({ dialogRef });
     <input
       ref="fileInput"
       type="file"
-      accept="text/csv"
+      accept=".csv,text/csv"
       class="hidden"
       @change="handleFileChange"
     />

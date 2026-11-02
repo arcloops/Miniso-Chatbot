@@ -339,6 +339,53 @@
         }
       }
     },
+    "SOCIAL": {
+      "HEADER_TITLE": "Messenger and Instagram campaigns",
+      "NEW_CAMPAIGN": "Create campaign",
+      "EMPTY_STATE": {
+        "TITLE": "No Messenger or Instagram campaigns yet",
+        "SUBTITLE": "Send a message to people who already wrote to you and are still inside the reply window."
+      },
+      "CREATE": {
+        "TITLE": "Create a Messenger or Instagram campaign",
+        "NOTE": "The people you label receive this on every Messenger, Instagram, and WhatsApp chat already saved on that contact, while Meta’s reply window is still open. A phone number on its own is reached from a WhatsApp campaign.",
+        "FORM": {
+          "TITLE": {
+            "LABEL": "Title",
+            "PLACEHOLDER": "Name this campaign",
+            "ERROR": "Title is required"
+          },
+          "MESSAGE": {
+            "LABEL": "Message",
+            "PLACEHOLDER": "Write the message to send",
+            "ERROR": "Message is required"
+          },
+          "INBOX": {
+            "LABEL": "Inbox",
+            "PLACEHOLDER": "Select Messenger or Instagram",
+            "ERROR": "Inbox is required"
+          },
+          "AUDIENCE": {
+            "LABEL": "Labels",
+            "PLACEHOLDER": "Contact or conversation labels",
+            "ERROR": "Choose at least one label"
+          },
+          "SCHEDULED_AT": {
+            "LABEL": "Send at",
+            "PLACEHOLDER": "Pick a time",
+            "ERROR": "Send time is required"
+          },
+          "BUTTONS": {
+            "CANCEL": "Cancel",
+            "CREATE": "Create"
+          },
+          "API": {
+            "SUCCESS_MESSAGE": "Campaign created",
+            "ERROR_MESSAGE": "The campaign could not be created"
+          }
+        }
+      }
+    },
     "HISTORY": {
       "LABEL": "Campaign",
       "LOAD_MORE": "Load earlier campaigns"

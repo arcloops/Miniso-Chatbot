@@ -45,6 +45,10 @@ export const getters = {
     const whatsappChannelTypes = [INBOX_TYPES.WHATSAPP];
     return _getters.getCampaigns(CAMPAIGN_TYPES.ONE_OFF, whatsappChannelTypes);
   },
+  getSocialCampaigns: (_state, _getters) => {
+    const socialChannelTypes = [INBOX_TYPES.FB, INBOX_TYPES.INSTAGRAM];
+    return _getters.getCampaigns(CAMPAIGN_TYPES.ONE_OFF, socialChannelTypes);
+  },
   getLiveChatCampaigns: (_state, _getters) => {
     const liveChatChannelTypes = [INBOX_TYPES.WEB];
     return _getters.getCampaigns(CAMPAIGN_TYPES.ONGOING, liveChatChannelTypes);
