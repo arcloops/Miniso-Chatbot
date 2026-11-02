@@ -5,6 +5,15 @@ class Instagram::WebhooksBaseService
     @channel = channel
   end
 
+  def self.apply_profile(inbox:, contact:, user:)
+    service = new(inbox.channel)
+    service.instance_variable_set(:@inbox, inbox)
+    service.instance_variable_set(:@contact, contact)
+    service.send(:apply_instagram_contact_name, user)
+    service.send(:update_instagram_profile_link, user)
+    Avatar::AvatarFromUrlJob.perform_later(contact, user['profile_pic']) if user['profile_pic'].present? && !contact.avatar.attached?
+  end
+
   private
 
   def inbox_channel(_instagram_id)

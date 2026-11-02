@@ -57,7 +57,12 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
     @contacts_count = @contacts.total_count
   end
 
-  def show; end
+  def show
+    Contacts::RefreshSocialProfileService.new(contact: @contact).perform
+    @contact.reload
+  rescue StandardError => e
+    Rails.logger.warn("Social profile refresh skipped for contact #{@contact&.id}: #{e.class}")
+  end
 
   def filter
     result = ::Contacts::FilterService.new(Current.account, Current.user, params.permit!).perform

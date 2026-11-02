@@ -12,6 +12,7 @@ import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import CompanySelector from 'dashboard/components-next/Companies/CompanySelector.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import PhoneNumberInput from 'dashboard/components-next/phonenumberinput/PhoneNumberInput.vue';
+import { socialProfileUrl } from 'dashboard/components-next/social-profiles/socialProfiles';
 
 const props = defineProps({
   contactData: {
@@ -128,6 +129,7 @@ const prepareStateBasedOnProps = () => {
     city = '',
     socialTelegramUserName = '',
     socialWhatsappUserName = '',
+    socialInstagramUserName = '',
     socialProfiles = {},
   } = additionalAttributes || {};
 
@@ -136,6 +138,13 @@ const prepareStateBasedOnProps = () => {
   const whatsappUsername = normalizeWhatsAppUsername(
     socialProfiles?.whatsapp || socialWhatsappUserName || ''
   );
+  const instagramUsername = (
+    socialProfiles?.instagram ||
+    socialInstagramUserName ||
+    ''
+  )
+    .toString()
+    .replace(/^@+/, '');
 
   Object.assign(state, {
     id,
@@ -153,6 +162,7 @@ const prepareStateBasedOnProps = () => {
       city,
       socialProfiles: {
         ...socialProfiles,
+        instagram: instagramUsername,
         telegram: telegramUsername,
         whatsapp: whatsappUsername,
       },
@@ -171,6 +181,63 @@ const editDetailsForm = computed(() =>
       `CONTACTS_LAYOUT.CARD.EDIT_DETAILS_FORM.FORM.${key}.PLACEHOLDER`
     ),
   }))
+);
+
+const channelFacts = computed(() => {
+  const details = props.contactData?.additionalAttributes || {};
+  const facts = [];
+  if (details.socialInstagramFollowerCount != null && details.socialInstagramFollowerCount !== '') {
+    facts.push({
+      key: 'followers',
+      label: t('CONTACT_PANEL.FOLLOWERS'),
+      value: String(details.socialInstagramFollowerCount),
+    });
+  }
+  if (details.socialInstagramIsVerifiedUser) {
+    facts.push({
+      key: 'verified',
+      label: t('CONTACT_PANEL.INSTAGRAM'),
+      value: t('CONTACT_PANEL.VERIFIED'),
+    });
+  }
+  if (details.socialInstagramIsUserFollowBusiness) {
+    facts.push({
+      key: 'follows',
+      label: t('CONTACT_PANEL.INSTAGRAM'),
+      value: t('CONTACT_PANEL.FOLLOWS_YOU'),
+    });
+  }
+  const messengerName = [details.socialMessengerFirstName, details.socialMessengerLastName]
+    .filter(Boolean)
+    .join(' ');
+  if (messengerName) {
+    facts.push({
+      key: 'messenger',
+      label: t('CONTACT_PANEL.MESSENGER_NAME'),
+      value: messengerName,
+    });
+  }
+  if (details.socialMessengerLocale) {
+    facts.push({
+      key: 'locale',
+      label: t('CONTACT_PANEL.LANGUAGE'),
+      value: details.socialMessengerLocale,
+    });
+  }
+  return facts;
+});
+
+const profileLinks = computed(() =>
+  ['instagram', 'facebook']
+    .map(network => {
+      const handle = (state.additionalAttributes.socialProfiles?.[network] || '')
+        .toString()
+        .trim();
+      if (!handle || handle.includes(' ')) return null;
+      const url = socialProfileUrl(network, handle);
+      return url ? { network, url } : null;
+    })
+    .filter(Boolean)
 );
 
 const socialProfilesForm = computed(() =>
@@ -350,6 +417,28 @@ defineExpose({
       <span class="py-1 text-sm font-medium text-n-slate-12">
         {{ t('CONTACTS_LAYOUT.CARD.SOCIAL_MEDIA.TITLE') }}
       </span>
+      <div v-if="profileLinks.length" class="flex flex-col gap-1">
+        <a
+          v-for="link in profileLinks"
+          :key="link.network"
+          :href="link.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sm underline text-n-slate-12"
+        >
+          {{ link.url }}
+        </a>
+      </div>
+      <div v-if="channelFacts.length" class="flex flex-col gap-1">
+        <p
+          v-for="fact in channelFacts"
+          :key="fact.key"
+          class="mb-0 text-sm text-n-slate-11"
+        >
+          <span class="font-medium text-n-slate-12">{{ fact.label }}:</span>
+          {{ fact.value }}
+        </p>
+      </div>
       <div class="flex flex-wrap gap-2">
         <div
           v-for="item in socialProfilesForm"
@@ -370,7 +459,16 @@ defineExpose({
             "
             class="w-auto min-w-[100px] text-sm bg-transparent outline-none reset-base text-n-slate-12 dark:text-n-slate-12 placeholder:text-n-slate-10 dark:placeholder:text-n-slate-10"
             :placeholder="item.placeholder"
-            :size="item.placeholder.length"
+            :size="
+              Math.max(
+                String(
+                  state.additionalAttributes.socialProfiles[
+                    item.key.toLowerCase()
+                  ] || item.placeholder
+                ).length,
+                12
+              )
+            "
             @input="handleSocialProfileInput(item)"
           />
         </div>
