@@ -2,6 +2,7 @@ class Contacts::RefreshSocialProfileService
   pattr_initialize [:contact!]
 
   def perform
+    remember_channel_ids
     contact.contact_inboxes.includes(:conversations, inbox: :channel).find_each do |contact_inbox|
       channel = contact_inbox.inbox&.channel
       case channel
@@ -46,6 +47,33 @@ class Contacts::RefreshSocialProfileService
   rescue StandardError => e
     Rails.logger.warn("Messenger profile refresh skipped for contact #{contact.id}: #{e.class}")
     mark_checked('messenger')
+  end
+
+  def remember_channel_ids
+    attrs = {}
+    contact.contact_inboxes.includes(:conversations, inbox: :channel).find_each do |contact_inbox|
+      source_id = contact_inbox.source_id.to_s.presence
+      next if source_id.blank?
+
+      case contact_inbox.inbox&.channel
+      when Channel::Instagram
+        attrs['social_instagram_user_id'] = source_id
+      when Channel::FacebookPage
+        if instagram_direct?(contact_inbox)
+          attrs['social_instagram_user_id'] = source_id
+        else
+          attrs['social_messenger_user_id'] = source_id
+        end
+      when Channel::Whatsapp
+        attrs['social_whatsapp_user_id'] = source_id
+      end
+    end
+    return if attrs.blank?
+
+    current = contact.additional_attributes || {}
+    return if attrs.all? { |key, value| current[key] == value }
+
+    contact.update!(additional_attributes: current.merge(attrs))
   end
 
   def remember_from_messages

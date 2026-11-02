@@ -69,8 +69,13 @@ body {
   }
 }
 
+.bg-n-brand {
+  background-color: #5db5e2;
+  color: #0a0a0b;
+}
+
 .text-link {
-  @apply text-n-brand font-medium hover:text-n-blue-10;
+  @apply text-n-blue-11 font-medium hover:text-n-blue-12;
 }
 
 .v-popper--theme-tooltip .v-popper__inner {

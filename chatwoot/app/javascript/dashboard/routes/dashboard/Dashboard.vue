@@ -129,7 +129,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-grow overflow-hidden text-n-slate-12">
+  <div class="acxio-desk flex flex-grow overflow-hidden text-n-slate-12 h-full min-h-0 box-border">
     <NextSidebar
       :is-mobile-sidebar-open="isMobileSidebarOpen"
       @toggle-account-modal="toggleAccountModal"

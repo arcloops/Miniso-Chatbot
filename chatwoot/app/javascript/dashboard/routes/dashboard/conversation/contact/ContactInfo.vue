@@ -119,6 +119,20 @@ export default {
     channelFacts() {
       const details = this.additionalAttributes;
       const facts = [];
+      if (details.social_messenger_user_id) {
+        facts.push({
+          key: 'messenger-id',
+          title: this.$t('CONTACT_PANEL.MESSENGER_ID'),
+          value: String(details.social_messenger_user_id),
+        });
+      }
+      if (details.social_instagram_user_id) {
+        facts.push({
+          key: 'instagram-id',
+          title: this.$t('CONTACT_PANEL.INSTAGRAM_ID'),
+          value: String(details.social_instagram_user_id),
+        });
+      }
       const username = details.social_instagram_user_name;
       if (username) {
         facts.push({

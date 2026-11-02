@@ -13,6 +13,7 @@ import CompanySelector from 'dashboard/components-next/Companies/CompanySelector
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import PhoneNumberInput from 'dashboard/components-next/phonenumberinput/PhoneNumberInput.vue';
 import { socialProfileUrl } from 'dashboard/components-next/social-profiles/socialProfiles';
+import { INBOX_TYPES } from 'dashboard/helper/inbox';
 
 const props = defineProps({
   contactData: {
@@ -182,6 +183,62 @@ const editDetailsForm = computed(() =>
     ),
   }))
 );
+
+const CHANNEL_LABELS = {
+  [INBOX_TYPES.FB]: 'Messenger',
+  [INBOX_TYPES.INSTAGRAM]: 'Instagram',
+  [INBOX_TYPES.WHATSAPP]: 'WhatsApp',
+  [INBOX_TYPES.WEB]: 'Website',
+  [INBOX_TYPES.EMAIL]: 'Email',
+  [INBOX_TYPES.TELEGRAM]: 'Telegram',
+  [INBOX_TYPES.TIKTOK]: 'TikTok',
+};
+
+const idLabelFor = channelType => {
+  if (channelType === INBOX_TYPES.INSTAGRAM) return t('CONTACT_PANEL.INSTAGRAM_ID');
+  if (channelType === INBOX_TYPES.WHATSAPP) return t('CONTACT_PANEL.WHATSAPP_ID');
+  if (channelType === INBOX_TYPES.FB) return t('CONTACT_PANEL.MESSENGER_ID');
+  return t('CONTACT_PANEL.IDENTIFIER');
+};
+
+const channelAccounts = computed(() => {
+  const seen = new Set();
+  const rows = (props.contactData?.contactInboxes || [])
+    .map(item => {
+      const channelType = item.inbox?.channelType;
+      const sourceId = (item.sourceId || '').toString();
+      if (!sourceId || seen.has(sourceId)) return null;
+      seen.add(sourceId);
+      return {
+        key: `${item.inbox?.id || channelType}-${sourceId}`,
+        label: CHANNEL_LABELS[channelType] || item.inbox?.name || 'Chat',
+        inboxName: item.inbox?.name || '',
+        idLabel: idLabelFor(channelType),
+        sourceId,
+      };
+    })
+    .filter(Boolean);
+
+  const details = props.contactData?.additionalAttributes || {};
+  const extras = [
+    ['messenger', details.socialMessengerUserId, t('CONTACT_PANEL.MESSENGER_ID')],
+    ['instagram', details.socialInstagramUserId, t('CONTACT_PANEL.INSTAGRAM_ID')],
+    ['whatsapp', details.socialWhatsappUserId, t('CONTACT_PANEL.WHATSAPP_ID')],
+  ];
+  extras.forEach(([key, sourceId, idLabel]) => {
+    const value = (sourceId || '').toString();
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    rows.push({
+      key,
+      label: idLabel.replace(/ ID$| number$/, ''),
+      inboxName: '',
+      idLabel,
+      sourceId: value,
+    });
+  });
+  return rows;
+});
 
 const channelFacts = computed(() => {
   const details = props.contactData?.additionalAttributes || {};
@@ -417,6 +474,22 @@ defineExpose({
       <span class="py-1 text-sm font-medium text-n-slate-12">
         {{ t('CONTACTS_LAYOUT.CARD.SOCIAL_MEDIA.TITLE') }}
       </span>
+      <div v-if="channelAccounts.length" class="flex flex-col gap-2">
+        <p
+          v-for="account in channelAccounts"
+          :key="account.key"
+          class="mb-0 text-sm text-n-slate-11"
+        >
+          <span class="font-medium text-n-slate-12">
+            {{ t('CONTACT_PANEL.TEXTED_FROM') }}:
+          </span>
+          {{ account.label }}
+          <span v-if="account.inboxName">· {{ account.inboxName }}</span>
+          <br />
+          <span class="font-medium text-n-slate-12">{{ account.idLabel }}:</span>
+          {{ account.sourceId }}
+        </p>
+      </div>
       <div v-if="profileLinks.length" class="flex flex-col gap-1">
         <a
           v-for="link in profileLinks"

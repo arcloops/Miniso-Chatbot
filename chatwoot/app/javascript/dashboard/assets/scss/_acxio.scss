@@ -1,0 +1,150 @@
+// Visual layer for the desk. Colors match the Acxio site.
+// Layout, routes, and behavior are unchanged.
+
+.acxio-desk {
+  --slate-1: 250 249 246;
+  --slate-2: 246 245 242;
+  --slate-3: 236 235 231;
+  --slate-4: 226 224 219;
+  --slate-5: 214 212 207;
+  --slate-6: 198 196 191;
+  --slate-7: 176 174 169;
+  --slate-8: 148 146 142;
+  --slate-9: 120 121 124;
+  --slate-10: 92 93 96;
+  --slate-11: 62 63 66;
+  --slate-12: 10 10 11;
+
+  --blue-1: 247 252 255;
+  --blue-2: 236 247 252;
+  --blue-3: 220 239 248;
+  --blue-4: 201 230 244;
+  --blue-5: 176 218 238;
+  --blue-6: 146 204 231;
+  --blue-7: 120 192 226;
+  --blue-8: 93 181 226;
+  --blue-9: 93 181 226;
+  --blue-10: 70 164 214;
+  --blue-11: 24 104 140;
+  --blue-12: 12 46 66;
+
+  --iris-3: 238 236 250;
+  --iris-4: 228 226 246;
+  --iris-8: 154 148 214;
+  --iris-9: 122 115 203;
+  --iris-10: 108 101 190;
+  --iris-11: 86 78 168;
+  --violet-8: 154 148 214;
+  --violet-9: 122 115 203;
+  --violet-11: 86 78 168;
+
+  --background-color: 246 245 242;
+  --surface-1: 255 255 255;
+  --surface-2: 255 255 255;
+  --surface-active: 255 255 255;
+  --border-weak: 226 224 219;
+  --border-strong: 198 196 191;
+  --border-container: 255, 255, 255, 0.7;
+  --solid-1: 255 255 255;
+  --solid-2: 255 255 255;
+  --solid-3: 250 249 246;
+  --solid-blue: 214 236 246;
+  --solid-iris: 232 230 247;
+  --solid-purple: 232 230 247;
+  --card-color: 255 255 255;
+  --text-blue: 12 46 66;
+  --text-purple: 42 36 92;
+  --border-blue: 93, 181, 226, 0.55;
+}
+
+body.dark .acxio-desk {
+  --slate-1: 14 14 16;
+  --slate-2: 20 20 24;
+  --slate-3: 28 28 34;
+  --slate-4: 36 36 44;
+  --slate-5: 46 46 56;
+  --slate-6: 58 58 70;
+  --slate-7: 78 78 92;
+  --slate-8: 110 110 124;
+  --slate-9: 132 132 146;
+  --slate-10: 168 168 178;
+  --slate-11: 210 210 216;
+  --slate-12: 246 245 242;
+
+  --blue-9: 93 181 226;
+  --blue-10: 120 198 232;
+  --blue-11: 176 220 238;
+  --blue-12: 230 244 250;
+  --iris-9: 154 148 214;
+  --iris-11: 198 194 236;
+  --violet-9: 154 148 214;
+  --violet-11: 198 194 236;
+
+  --background-color: 10 10 11;
+  --surface-1: 16 16 20;
+  --surface-2: 20 20 26;
+  --surface-active: 36 36 48;
+  --border-weak: 46 46 56;
+  --border-strong: 68 68 80;
+  --solid-1: 22 22 28;
+  --solid-2: 28 28 36;
+  --solid-3: 36 36 46;
+  --solid-blue: 24 52 68;
+  --solid-iris: 40 36 68;
+  --solid-purple: 40 36 68;
+  --card-color: 22 22 28;
+  --text-blue: 214 236 246;
+  --text-purple: 226 222 250;
+}
+
+body:has(.acxio-desk) {
+  background:
+    radial-gradient(920px 520px at 0% -8%, rgba(93, 181, 226, 0.45), transparent 62%),
+    radial-gradient(780px 480px at 100% 0%, rgba(122, 115, 203, 0.34), transparent 58%),
+    radial-gradient(680px 460px at 78% 110%, rgba(93, 181, 226, 0.22), transparent 55%),
+    #f6f5f2;
+}
+
+body.dark:has(.acxio-desk) {
+  background:
+    radial-gradient(920px 520px at 0% -8%, rgba(93, 181, 226, 0.22), transparent 62%),
+    radial-gradient(780px 480px at 100% 0%, rgba(122, 115, 203, 0.28), transparent 58%),
+    #0a0a0b;
+}
+
+.bg-n-brand {
+  background-color: #5db5e2;
+  color: #0a0a0b;
+}
+
+@media (min-width: 768px) {
+  .acxio-desk {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .acxio-desk > aside,
+  .acxio-desk > main {
+    border: 1px solid rgba(255, 255, 255, 0.66) !important;
+    border-radius: 28px;
+    background-color: rgba(246, 245, 242, 0.58) !important;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.72) inset,
+      0 24px 60px rgba(10, 10, 11, 0.08);
+    backdrop-filter: blur(22px) saturate(1.35);
+  }
+
+  body.dark .acxio-desk > aside,
+  body.dark .acxio-desk > main {
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    background-color: rgba(16, 16, 20, 0.62) !important;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 24px 60px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.acxio-desk input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+.acxio-desk textarea {
+  border-radius: 14px;
+}
