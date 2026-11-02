@@ -39,12 +39,12 @@ const toggleSidebar = () => {
   <div
     v-if="!isConversationRoute"
     id="mobile-sidebar-launcher"
-    class="fixed bottom-4 ltr:left-4 rtl:right-4 z-40 transition-transform duration-200 ease-out block md:hidden"
-    :class="[
-      {
-        'ltr:translate-x-48 rtl:-translate-x-48': isMobileSidebarOpen,
-      },
-    ]"
+    class="fixed bottom-4 z-[60] transition-all duration-200 ease-out block md:hidden"
+    :class="
+      isMobileSidebarOpen
+        ? 'ltr:right-4 rtl:left-4'
+        : 'ltr:left-4 rtl:right-4'
+    "
   >
     <ButtonGroup
       class="rounded-full bg-n-alpha-2 backdrop-blur-lg p-1 shadow hover:shadow-md"

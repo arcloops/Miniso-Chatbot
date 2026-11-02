@@ -407,6 +407,37 @@ body.dark.acxio-app [class*='backdrop-blur-[100px]'] {
   background-color: rgba(var(--acxio-blue-rgb), 0.12);
 }
 
+@media (max-width: 767px) {
+  .acxio-desk > aside {
+    z-index: 50 !important;
+    width: min(18.5rem, calc(100vw - 4.5rem)) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background:
+      linear-gradient(180deg, rgba(var(--acxio-purple-rgb), 0.34), transparent 24%),
+      #14111f !important;
+    box-shadow: 18px 0 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .acxio-desk > aside::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: rgba(6, 6, 14, 0.55);
+  }
+
+  .acxio-desk > main {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #12101c !important;
+  }
+
+  #mobile-sidebar-launcher {
+    z-index: 60;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .acxio-desk button,
   .acxio-desk a,

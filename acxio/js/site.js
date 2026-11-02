@@ -1,10 +1,10 @@
 const lines = [
   ["in", "WhatsApp", "Do you have the white lamp in stock?"],
-  ["out", "acxio", "Yes. Two are left at Banani. I can hold one for you."],
+  ["out", "twix", "Yes. Two are left at Banani. I can hold one for you."],
   ["in", "Messenger", "Can someone call me after 6?"],
-  ["out", "acxio", "Booked. Naima will call you at 6:15."],
+  ["out", "twix", "Booked. Naima will call you at 6:15."],
   ["in", "Instagram", "Is the showroom open on Friday?"],
-  ["out", "acxio", "Open 11 to 8. I can reserve a viewing."]
+  ["out", "twix", "Open 11 to 8. I can reserve a viewing."]
 ];
 
 function bootThread() {
@@ -70,9 +70,9 @@ function bootCounts() {
 }
 
 const frames = [
-  ["assets/desk-queue.jpg", "Queue", "Every connected channel, in one list.", "Conversations from more than one channel listed together on the acxio desk."],
-  ["assets/desk-thread.jpg", "Thread", "The history stays beside the reply.", "An open conversation on the acxio desk, ready to answer."],
-  ["assets/inbox.png", "Inboxes", "Each channel is named on the side.", "Named WhatsApp and Messenger inboxes in the acxio sidebar."]
+  ["assets/desk-queue.jpg", "Queue", "Every connected channel, in one list.", "Conversations from more than one channel listed together on the twix desk."],
+  ["assets/desk-thread.jpg", "Thread", "The history stays beside the reply.", "An open conversation on the twix desk, ready to answer."],
+  ["assets/inbox.png", "Inboxes", "Each channel is named on the side.", "Named WhatsApp and Messenger inboxes in the twix sidebar."]
 ];
 
 function bootShow() {
@@ -126,7 +126,7 @@ function bootForm() {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const note = form.querySelector(".note");
-    note.textContent = "Received. A person from acxio will write back.";
+    note.textContent = "Received. A person from twix will write back.";
     form.reset();
   });
 }

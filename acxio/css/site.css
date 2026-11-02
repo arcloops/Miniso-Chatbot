@@ -164,7 +164,7 @@ h1, h2, h3, .wordmark, .nav-brand, .stat b, .kicker {
 .page-hero .lede { max-width: 46ch; }
 .page-hero .field { inset: auto 8vw auto auto; top: 72px; width: 380px; height: 380px; }
 .page-hero::after {
-  content: "acxio";
+  content: "twix";
   position: absolute;
   right: 5vw;
   bottom: -0.22em;

@@ -554,10 +554,24 @@ h1 {
   .feed { grid-column: auto; grid-row: auto; }
 }
 @media (max-width: 720px) {
-  .overview { padding: 18px; }
-  .overview-head,
-  .stats { display: grid; }
-  .stats { grid-template-columns: 1fr 1fr; }
-  h1 { font-size: 28px; }
+  .overview {
+    overflow: auto;
+    padding: 16px 16px 96px;
+  }
+  .overview-head {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .quick { width: 100%; }
+  .quick button { flex: 1; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; }
+  .grid { grid-template-columns: 1fr; grid-template-rows: none; }
+  .chats,
+  .team,
+  .channels,
+  .chart,
+  .feed { grid-column: auto; grid-row: auto; min-height: 0; }
+  h1 { font-size: 26px; }
 }
 </style>
