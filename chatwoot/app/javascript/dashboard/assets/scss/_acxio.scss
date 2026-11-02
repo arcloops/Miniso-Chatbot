@@ -58,20 +58,20 @@ body.acxio-app {
   --violet-9: 122 115 203;
   --violet-11: 214 210 242;
 
-  --background-color: 10 12 24;
-  --surface-1: 16 18 38;
-  --surface-2: 22 20 46;
-  --surface-active: 42 36 78;
+  --background-color: 28 18 62;
+  --surface-1: 46 32 96;
+  --surface-2: 62 44 122;
+  --surface-active: 78 58 148;
   --border-weak: 58 52 96;
   --border-strong: 122 115 203;
   --border-container: 93, 181, 226, 0.28;
-  --solid-1: 18 20 40;
-  --solid-2: 28 26 54;
-  --solid-3: 40 36 72;
+  --solid-1: 54 38 108;
+  --solid-2: 86 68 156;
+  --solid-3: 108 88 184;
   --solid-blue: 18 48 72;
   --solid-iris: 42 34 78;
   --solid-purple: 42 34 78;
-  --card-color: 20 22 44;
+  --card-color: 92 74 164;
   --text-blue: 214 236 246;
   --text-purple: 226 222 250;
   --border-blue: 93, 181, 226, 0.7;
@@ -103,19 +103,19 @@ body.dark .acxio-desk {
   --violet-9: 154 148 214;
   --violet-11: 214 210 242;
 
-  --background-color: 10 10 11;
-  --surface-1: 18 18 28;
-  --surface-2: 24 22 38;
-  --surface-active: 42 38 68;
+  --background-color: 24 16 52;
+  --surface-1: 42 28 88;
+  --surface-2: 58 40 112;
+  --surface-active: 74 54 138;
   --border-weak: 58 54 86;
   --border-strong: 122 115 203;
-  --solid-1: 22 22 34;
-  --solid-2: 30 28 46;
-  --solid-3: 42 38 64;
+  --solid-1: 50 34 100;
+  --solid-2: 82 64 148;
+  --solid-3: 104 84 176;
   --solid-blue: 18 48 66;
   --solid-iris: 40 36 72;
   --solid-purple: 40 36 72;
-  --card-color: 22 22 34;
+  --card-color: 88 70 156;
   --text-blue: 214 236 246;
   --text-purple: 226 222 250;
 }
@@ -177,10 +177,10 @@ body.acxio-app h3 {
   }
 
   .acxio-desk > main {
-    border: 1px solid rgba(var(--acxio-blue-rgb), 0.35) !important;
+    border: 1px solid rgba(196, 188, 242, 0.45) !important;
     border-radius: 32px;
     background:
-      linear-gradient(165deg, rgba(var(--acxio-blue-rgb), 0.16), rgba(var(--acxio-purple-rgb), 0.14) 42%, rgba(10, 14, 32, 0.72)) !important;
+      linear-gradient(165deg, #3a2870 0%, #241848 52%, #16102c 100%) !important;
     box-shadow:
       0 1px 0 rgba(var(--acxio-blue-rgb), 0.22) inset,
       0 24px 60px rgba(4, 6, 20, 0.45);
@@ -190,7 +190,7 @@ body.acxio-app h3 {
   body.dark .acxio-desk > main {
     border-color: rgba(var(--acxio-purple-rgb), 0.4) !important;
     background:
-      linear-gradient(165deg, rgba(var(--acxio-blue-rgb), 0.16), rgba(var(--acxio-purple-rgb), 0.18) 46%, rgba(10, 10, 11, 0.72)) !important;
+      linear-gradient(165deg, #342464 0%, #201440 52%, #140e28 100%) !important;
     box-shadow:
       0 1px 0 rgba(var(--acxio-blue-rgb), 0.18) inset,
       0 24px 60px rgba(0, 0, 0, 0.4);
@@ -207,11 +207,11 @@ body.acxio-app h3 {
 }
 
 .acxio-desk .bg-n-background {
-  background-color: transparent !important;
+  background-color: #1c1438 !important;
 }
 
 .acxio-desk .bg-n-surface-1 {
-  background-color: rgba(12, 16, 36, 0.55) !important;
+  background-color: #2a1c52 !important;
 }
 
 .acxio-desk .bg-n-surface-2,
@@ -219,16 +219,16 @@ body.acxio-app h3 {
 .acxio-desk .bg-n-solid-2,
 .acxio-desk .bg-n-card {
   background:
-    linear-gradient(180deg, rgba(var(--acxio-blue-rgb), 0.14), rgba(var(--acxio-purple-rgb), 0.16)),
-    rgba(12, 16, 36, 0.72) !important;
-  border-color: rgba(var(--acxio-purple-rgb), 0.32);
+    linear-gradient(180deg, rgba(230, 226, 250, 0.24), rgba(122, 115, 203, 0.2)),
+    #5c4aa0 !important;
+  border-color: rgba(230, 226, 250, 0.38);
   box-shadow:
-    0 1px 0 rgba(var(--acxio-blue-rgb), 0.2) inset,
-    0 16px 36px rgba(4, 6, 20, 0.32);
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 16px 36px rgba(12, 8, 32, 0.32);
 }
 
 body.dark .acxio-desk .bg-n-surface-1 {
-  background-color: rgba(18, 19, 28, 0.66) !important;
+  background-color: #261848 !important;
 }
 
 body.dark .acxio-desk .bg-n-surface-2,
@@ -236,8 +236,8 @@ body.dark .acxio-desk .bg-n-solid-1,
 body.dark .acxio-desk .bg-n-solid-2,
 body.dark .acxio-desk .bg-n-card {
   background:
-    linear-gradient(180deg, rgba(var(--acxio-blue-rgb), 0.12), rgba(var(--acxio-purple-rgb), 0.16)),
-    rgba(18, 19, 28, 0.72) !important;
+    linear-gradient(180deg, rgba(230, 226, 250, 0.2), rgba(122, 115, 203, 0.18)),
+    #564294 !important;
   box-shadow:
     0 1px 0 rgba(var(--acxio-blue-rgb), 0.16) inset,
     0 12px 32px rgba(0, 0, 0, 0.28);

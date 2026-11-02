@@ -384,7 +384,9 @@ h1 {
 .grid {
   flex: 1;
   min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(180px, 1fr) auto;
 }
 .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .stats article,
@@ -409,10 +411,17 @@ h1 {
 .stats .resolved,
 .stats .agents { background: linear-gradient(160deg, rgba(93, 181, 226, 0.28), rgba(90, 70, 160, 0.36) 55%, rgba(18, 14, 40, 0.78)); }
 .stat-icon { color: #d7d2f8; }
-.grid { grid-template-columns: 1.5fr 0.9fr 0.8fr; }
-.panel { padding: 18px; }
+.panel {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 18px;
+}
 .panel h2 { margin: 0; font-size: 16px; letter-spacing: -0.03em; }
-.chats { grid-column: 1; grid-row: span 2; }
+.chats { grid-column: 1; grid-row: 1 / span 2; }
+.team { grid-column: 2; grid-row: 1; }
+.channels { grid-column: 3; grid-row: 1; }
+.chart { grid-column: 2 / span 2; grid-row: 2; display: flex; flex-direction: column; }
+.feed { grid-column: 1 / -1; grid-row: 3; }
 .chats,
 .team,
 .channels,
@@ -437,7 +446,6 @@ h1 {
   border-radius: 999px;
   background: linear-gradient(180deg, #5db5e2, #7a73cb) padding-box;
 }
-.chart { grid-column: 2 / span 2; }
 .chat,
 .event,
 .channel,
@@ -490,14 +498,17 @@ h1 {
 .load b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #5db5e2, #7a73cb); }
 .channel { margin-top: 12px; }
 .channel strong { margin-left: auto; }
-.chart svg { width: 100%; height: 110px; margin-top: 12px; }
+.chart svg { width: 100%; height: 110px; margin-top: 12px; flex: 1; }
 .chart polyline { fill: none; stroke: #5db5e2; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(93, 181, 226, 0.7)); }
 .split { display: flex; gap: 18px; margin: 0; }
 @media (max-width: 1100px) {
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .grid { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; grid-template-rows: none; }
   .chats,
-  .chart { grid-column: auto; grid-row: auto; }
+  .team,
+  .channels,
+  .chart,
+  .feed { grid-column: auto; grid-row: auto; }
 }
 @media (max-width: 720px) {
   .overview { padding: 18px; }
