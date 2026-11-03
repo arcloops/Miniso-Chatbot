@@ -25,14 +25,15 @@
   </header>
 
   <section class="hero">
+    <div class="hero-glow" aria-hidden="true">
+      <span class="liquid liquid-a"></span>
+      <span class="liquid liquid-b"></span>
+      <span class="liquid liquid-c"></span>
+      <span class="liquid liquid-d"></span>
+      <span class="liquid liquid-e"></span>
+      <span class="hero-stars"></span>
+    </div>
     <div class="copy">
-      <div class="field" aria-hidden="true">
-        <span class="halo"></span>
-        <i class="orb a" data-depth="26"></i>
-        <i class="orb b" data-depth="-18"></i>
-        <i class="orb c" data-depth="14"></i>
-        <i class="orb d" data-depth="-10"></i>
-      </div>
       <p class="kicker reveal">Inbox, Agent, Desk</p>
       <h1 class="reveal d2">Every conversation, one quiet desk.</h1>
       <p class="lede reveal d3">twix gathers every channel onto one desk. WhatsApp, Messenger, and Instagram are where most people write. They are not the limit. People reply. The agent replies. Nothing sits unseen.</p>
@@ -42,19 +43,54 @@
       </div>
     </div>
     <div class="stage" data-stage>
-      <div class="orbit" aria-hidden="true">
-        <span><em>WhatsApp</em></span>
-        <span><em>Messenger</em></span>
-        <span><em>Instagram</em></span>
-      </div>
-      <article class="glass thread" data-depth="18">
+      <span class="glass-orb glass-orb-lg" data-depth="10" aria-hidden="true"></span>
+      <span class="glass-orb glass-orb-sm" data-depth="-16" aria-hidden="true"></span>
+
+      <figure class="glass desk-card" data-depth="8">
+        <img src="assets/desk-queue.jpg" alt="The twix desk with WhatsApp and Messenger conversations in one list.">
+        <figcaption>
+          <span>Unified inbox</span>
+          <span class="live-dot" aria-hidden="true"></span>
+        </figcaption>
+      </figure>
+
+      <article class="glass float-card wa-card" data-depth="22">
+        <header>
+          <span class="channel-dot wa"></span>
+          <span>WhatsApp</span>
+          <em>2m</em>
+        </header>
+        <p><strong>Banani store</strong></p>
+        <p>Do you have the white lamp in stock?</p>
+        <span class="badge">1</span>
+      </article>
+
+      <article class="glass float-card ig-card" data-depth="-18">
+        <header>
+          <span class="channel-dot ig"></span>
+          <span>Instagram</span>
+        </header>
+        <p>New DM · showroom hours</p>
+        <span class="badge">3</span>
+      </article>
+
+      <article class="glass float-card ms-card" data-depth="16">
+        <header>
+          <span class="channel-dot ms"></span>
+          <span>Messenger</span>
+          <em>now</em>
+        </header>
+        <img src="assets/desk-thread.jpg" alt="An open Messenger conversation on the twix desk.">
+      </article>
+
+      <article class="glass thread" data-depth="14">
         <header><span>Live desk</span><span class="live-dot" aria-hidden="true"></span></header>
         <div class="bubbles" data-thread></div>
       </article>
-      <figure class="glass shot" data-depth="-12">
-        <img src="assets/desk-queue.jpg" alt="The twix desk with WhatsApp and Messenger conversations in one list.">
-        <figcaption>The live desk</figcaption>
-      </figure>
+
+      <div class="float-pill wa" data-depth="26"><em>WhatsApp</em></div>
+      <div class="float-pill ms" data-depth="-12"><em>Messenger</em></div>
+      <div class="float-pill ig" data-depth="20"><em>Instagram</em></div>
     </div>
   </section>
 
