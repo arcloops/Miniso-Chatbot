@@ -151,6 +151,7 @@ h1, h2, h3, .wordmark, .nav-brand, .stat b, .kicker {
   padding: 132px 6vw 88px;
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  grid-template-areas: "copy stage";
   gap: 48px;
   align-items: center;
   overflow: hidden;
@@ -168,6 +169,9 @@ h1, h2, h3, .wordmark, .nav-brand, .stat b, .kicker {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  grid-area: unset;
+  width: 100%;
+  height: 100%;
 }
 .liquid {
   position: absolute;
@@ -240,6 +244,7 @@ h1, h2, h3, .wordmark, .nav-brand, .stat b, .kicker {
   animation: star-twinkle 6s ease-in-out infinite;
 }
 .hero .copy {
+  grid-area: copy;
   position: relative;
   z-index: 2;
   max-width: 560px;
@@ -407,6 +412,7 @@ h1 { font-size: clamp(48px, 6vw, 88px); margin: 18px 0 18px; max-width: 11ch; }
 }
 
 .stage {
+  grid-area: stage;
   position: relative;
   height: 640px;
   perspective: 1400px;
@@ -1163,6 +1169,10 @@ footer nav { display: flex; gap: 18px; }
   .hero {
     padding: 118px 5vw 64px;
     gap: 36px;
+    grid-template-areas:
+      "copy"
+      "stage";
+    grid-template-columns: 1fr;
   }
   .hero .copy { max-width: none; }
   .hero h1 { max-width: 14ch; }
